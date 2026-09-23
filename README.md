@@ -1,17 +1,24 @@
-# velo
+# Velo Dashboard
 
-A new Flutter project.
+Flutter-приложение для велотренировок с подключением к умным станкам и пульсометрам через Bluetooth.
 
-## Getting Started
+## Возможности
+- 📡 Подключение к велостанкам (Tacx, Wahoo, Elite) по протоколу FTMS
+- ❤️ Поддержка пульсометров (ANT+/BLE)
+- 📊 Отображение скорости, мощности, пульса, каденса в реальном времени
+- 🛣️ 2D-визуализация трассы с перспективой и анимацией
+- ️ Таймеры, дистанция, время в движении
 
-This project is a starting point for a Flutter application.
+## Технологии
+- Flutter / Dart
+- flutter_blue_plus (Bluetooth Low Energy)
+- CustomPainter (2D-графика)
 
-A few resources to get you started if this is your first Flutter project:
+## Установка
+1. Клонируйте репозиторий: `git clone https://github.com/ВАШ-ЛОГИН/velo-dashboard.git`
+2. Установите зависимости: `flutter pub get`
+3. Запустите: `flutter run`
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Требования
+- iOS 12+ или Android 8.0+
+- Велостанк с поддержкой Bluetooth FTMS (например, Tacx Flux 2)

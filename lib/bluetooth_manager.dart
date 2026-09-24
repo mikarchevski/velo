@@ -76,43 +76,68 @@ class BluetoothManager extends ChangeNotifier {
   // ПРАВИЛЬНЫЙ СПОСОБ для симуляции рельефа: Indoor Bike Simulation (Opcode 0x12)
   Future<void> setSimulationParameters(double gradientPercent) async {
     if (_controlPointCharacteristic == null || !isConnected) {
+      print("❌ Control Point не найден или станок не подключен");
       return;
     }
 
     try {
-      // ШАГ 1: Всегда запрашиваем контроль перед отправкой команд (Opcode 0x00)
-      ByteData requestControl = ByteData(1);
-      requestControl.setUint8(0, 0x00);
+      // 1. Request Control
+      final requestControl = Uint8List.fromList([
+        0x00,
+      ]);
+
       await _controlPointCharacteristic!.write(
-        requestControl.buffer.asUint8List(),
+        requestControl,
         withoutResponse: false,
       );
-      await Future.delayed(const Duration(milliseconds: 50));
 
-      // ШАГ 2: Отправляем параметры симуляции (Opcode 0x12)
-      ByteData data = ByteData(9);
-      data.setUint8(0, 0x12); // Opcode: Set Indoor Bike Simulation Parameters
+      print("📤 REQUEST_CONTROL: 00");
 
-      // Байты 1-2: Скорость ветра (м/с) * 1000. Пока 0.
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // 2. Set Indoor Bike Simulation Parameters
+      final safeGradient = gradientPercent.clamp(-20.0, 20.0);
+
+      final data = ByteData(7);
+
+      // Opcode
+      data.setUint8(0, 0x11);
+
+      // Wind Speed: 0 m/s
       data.setInt16(1, 0, Endian.little);
 
-      // Байты 3-4: Уклон (%) * 100
-      double safeGradient = gradientPercent.clamp(-20.0, 20.0);
-      data.setInt16(3, (safeGradient * 100).round(), Endian.little);
+      // Grade: percentage * 100
+      data.setInt16(
+        3,
+        (safeGradient * 100).round(),
+        Endian.little,
+      );
 
-      // Байты 5-6: Crr (Коэффициент сопротивления качению) * 10000
-      data.setUint16(5, 50, Endian.little); // 0.005
+      // Crr = 0.005
+      // resolution 0.0001
+      // 0.005 / 0.0001 = 50
+      data.setUint8(5, 50);
 
-      // Байты 7-8: Коэффициент сопротивления ветру * 1000
-      data.setUint16(7, 510, Endian.little); // 0.51
+      // Cw = 0.51 kg/m
+      // resolution 0.01
+      // 0.51 / 0.01 = 51
+      data.setUint8(6, 51);
+
+      final bytes = data.buffer.asUint8List();
+
+      print(
+        "📤 SIMULATION: "
+        "${bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}",
+      );
 
       await _controlPointCharacteristic!.write(
-        data.buffer.asUint8List(),
+        bytes,
         withoutResponse: false,
       );
 
       print(
-          "🏔️ СИМУЛЯЦИЯ: Уклон ${safeGradient.toStringAsFixed(1)}% отправлен на станок");
+        "🏔️ Градиент ${safeGradient.toStringAsFixed(2)}% отправлен",
+      );
     } catch (e) {
       print("❌ ОШИБКА отправки симуляции: $e");
     }

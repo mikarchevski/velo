@@ -47,8 +47,7 @@ class BluetoothManager extends ChangeNotifier {
         for (var result in results) {
           String deviceName = result.device.platformName;
 
-          bool isFitnessDevice =
-              deviceName.toLowerCase().contains('tacx') ||
+          bool isFitnessDevice = deviceName.toLowerCase().contains('tacx') ||
               deviceName.toLowerCase().contains('wahoo') ||
               deviceName.toLowerCase().contains('elite') ||
               deviceName.toLowerCase().contains('garmin') ||

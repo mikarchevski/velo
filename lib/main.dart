@@ -3,14 +3,35 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 import 'bluetooth_manager.dart';
 import 'perspective_road.dart';
 
-void main() {
+// void main() {
+//   runApp(
+//     ChangeNotifierProvider(
+//       create: (_) => BluetoothManager(),
+//       child: const VeloApp(),
+
+//     ),
+//   );
+// }
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => BluetoothManager(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => BluetoothManager(),
+        ),
+      ],
       child: const VeloApp(),
     ),
   );
@@ -56,6 +77,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final btManager = context.watch<BluetoothManager>();
+    final shortestSide = MediaQuery.sizeOf(context).shortestSide;
+
+    final isSmallPhone = shortestSide < 400;
+    final isPhone = shortestSide < 600;
+    final isTablet = shortestSide >= 600;
 
     return Scaffold(
       appBar: isRiding
@@ -104,8 +130,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: isRiding
           ? _buildRideScreen(btManager)
           : (isShowingConnectionScreen
-                ? _buildConnectionUI(btManager)
-                : _buildDashboardUI(btManager)),
+              ? _buildConnectionUI(btManager)
+              : _buildDashboardUI(btManager)),
     );
   }
 
@@ -240,6 +266,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildDashboardUI(BluetoothManager btManager) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isPhone = screenWidth < 600;
+
+    if (isPhone) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: _buildDataCard(
+                        'СКОРОСТЬ',
+                        btManager.speed.toStringAsFixed(1),
+                        'км/ч',
+                        Colors.blue,
+                        compact: true,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDataCard(
+                        'МОЩНОСТЬ',
+                        btManager.power.toString(),
+                        'Вт',
+                        Colors.orange,
+                        compact: true,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDataCard(
+                        'ПУЛЬС',
+                        btManager.heartRate.toString(),
+                        'уд/мин',
+                        Colors.red,
+                        compact: true,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDataCard(
+                        'КАДЕНС',
+                        btManager.cadence.toString(),
+                        'об/мин',
+                        Colors.purple,
+                        compact: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: 320,
+              height: 58,
+              child: ElevatedButton(
+                onPressed: btManager.isConnected ? _startRide : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: btManager.isConnected
+                      ? const Color(0xFF00E676)
+                      : Colors.grey.shade700,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  btManager.isConnected ? 'НАЧАТЬ ЗАЕЗД' : 'ПОДКЛЮЧИТЕ СТАНОК',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: btManager.isConnected
+                        ? Colors.black
+                        : Colors.grey.shade500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Планшетный интерфейс — оставляем практически как был.
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -300,9 +414,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: btManager.isConnected
-                    ? Colors.black
-                    : Colors.grey.shade500,
+                color:
+                    btManager.isConnected ? Colors.black : Colors.grey.shade500,
               ),
             ),
           ),
@@ -313,116 +426,163 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRideScreen(BluetoothManager btManager) {
+    final size = MediaQuery.sizeOf(context);
+    final isPhone = size.shortestSide < 600;
+
     return Stack(
       children: [
         Column(
           children: [
             SafeArea(
+              bottom: false,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 8,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isPhone ? 8 : 16,
+                  vertical: isPhone ? 8 : 12,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade900,
                   border: Border(
-                    bottom: BorderSide(color: Colors.grey.shade800, width: 2),
+                    bottom: BorderSide(
+                      color: Colors.grey.shade800,
+                      width: 1,
+                    ),
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildCompactMetric(
-                          btManager.speed.toStringAsFixed(1),
-                          'км/ч',
-                          Colors.blue,
-                        ),
-                        _buildCompactMetric(
-                          btManager.power.toString(),
-                          'Вт',
-                          Colors.orange,
-                        ),
-                        _buildCompactMetric(
-                          btManager.heartRate.toString(),
-                          'уд/м',
-                          Colors.red,
-                        ),
-                        _buildCompactMetric(
-                          btManager.cadence.toString(),
-                          'об/м',
-                          Colors.purple,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildCompactMetric(
-                          _formatDuration(rideDuration),
-                          '',
-                          Colors.white,
-                        ),
-                        _buildCompactMetric(
-                          _formatDistance(distance),
-                          '',
-                          Colors.cyan,
-                        ),
-                        _buildCompactMetric(
-                          _formatDuration(movingDuration),
-                          '',
-                          Colors.greenAccent,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                child: isPhone
+                    ? Row(
+                        children: [
+                          _buildCompactMetric(
+                            btManager.speed.toStringAsFixed(1),
+                            'км/ч',
+                            Colors.blue,
+                            valueSize: 22,
+                          ),
+                          _buildCompactMetric(
+                            btManager.power.toString(),
+                            'Вт',
+                            Colors.orange,
+                            valueSize: 22,
+                          ),
+                          _buildCompactMetric(
+                            btManager.heartRate.toString(),
+                            'уд/мин',
+                            Colors.red,
+                            valueSize: 22,
+                          ),
+                          _buildCompactMetric(
+                            btManager.cadence.toString(),
+                            'об/мин',
+                            Colors.purple,
+                            valueSize: 22,
+                          ),
+                          _buildCompactMetric(
+                            _formatDuration(rideDuration),
+                            'время',
+                            Colors.white,
+                            valueSize: 19,
+                          ),
+                          _buildCompactMetric(
+                            _formatDistance(distance),
+                            'дистанция',
+                            Colors.cyan,
+                            valueSize: 19,
+                          ),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          Row(
+                            children: [
+                              _buildCompactMetric(
+                                btManager.speed.toStringAsFixed(1),
+                                'км/ч',
+                                Colors.blue,
+                              ),
+                              _buildCompactMetric(
+                                btManager.power.toString(),
+                                'Вт',
+                                Colors.orange,
+                              ),
+                              _buildCompactMetric(
+                                btManager.heartRate.toString(),
+                                'уд/м',
+                                Colors.red,
+                              ),
+                              _buildCompactMetric(
+                                btManager.cadence.toString(),
+                                'об/м',
+                                Colors.purple,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              _buildCompactMetric(
+                                _formatDuration(rideDuration),
+                                'время',
+                                Colors.white,
+                              ),
+                              _buildCompactMetric(
+                                _formatDistance(distance),
+                                'дистанция',
+                                Colors.cyan,
+                              ),
+                              _buildCompactMetric(
+                                _formatDuration(movingDuration),
+                                'движение',
+                                Colors.greenAccent,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
               ),
             ),
             Expanded(
-              child: Container(
-                color: Colors.transparent,
-                child: CustomPaint(
-                  size: Size.infinite,
-                  painter: PerspectiveRoadPainter(
-                    elevationData: elevationProfile,
-                    currentDistance: distance,
-                    totalDistance: totalRouteDistance,
-                    currentSpeed: btManager.speed,
-                    cadence: btManager.cadence.toDouble(),
-                    pedalAngle: pedalAngle,
-                  ),
+              child: CustomPaint(
+                size: Size.infinite,
+                painter: PerspectiveRoadPainter(
+                  elevationData: elevationProfile,
+                  currentDistance: distance,
+                  totalDistance: totalRouteDistance,
+                  currentSpeed: btManager.speed,
+                  cadence: btManager.cadence.toDouble(),
+                  pedalAngle: pedalAngle,
                 ),
               ),
             ),
           ],
         ),
         Positioned(
-          left: 16,
-          bottom: 16,
+          left: isPhone ? 16 : 16,
+          bottom: isPhone ? 16 : 16,
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: _showStopRideDialog,
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(32),
               child: Container(
-                width: 56,
-                height: 56,
+                width: isPhone ? 64 : 56,
+                height: isPhone ? 64 : 56,
                 decoration: BoxDecoration(
                   color: Colors.redAccent.withOpacity(0.9),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-                child: const Icon(Icons.logout, color: Colors.white, size: 28),
+                child: Icon(
+                  Icons.stop_rounded,
+                  color: Colors.white,
+                  size: isPhone ? 32 : 28,
+                ),
               ),
             ),
           ),
@@ -554,53 +714,100 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _buildCompactMetric(String value, String unit, Color color) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '$value$unit',
-          style: TextStyle(
-            color: color,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+  Widget _buildCompactMetric(
+    String value,
+    String unit,
+    Color color, {
+    double valueSize = 18,
+    double unitSize = 10,
+  }) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: TextStyle(
+                color: color,
+                fontSize: valueSize,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-        ),
-      ],
+          if (unit.isNotEmpty)
+            Text(
+              unit,
+              maxLines: 1,
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: unitSize,
+              ),
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildDataCard(String title, String value, String unit, Color color) {
+  Widget _buildDataCard(
+    String title,
+    String value,
+    String unit,
+    Color color, {
+    bool compact = false,
+  }) {
     return Container(
-      width: 150,
-      padding: const EdgeInsets.all(15),
+      height: compact ? 150 : null,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 15,
+        vertical: compact ? 12 : 15,
+      ),
       decoration: BoxDecoration(
         color: Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withValues(alpha: 0.25),
+          width: 1.5,
+        ),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.grey.shade400,
-              fontSize: 14,
+              fontSize: compact ? 12 : 14,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: compact ? 34 : 36,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             unit,
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontSize: compact ? 12 : 14,
+            ),
           ),
         ],
       ),

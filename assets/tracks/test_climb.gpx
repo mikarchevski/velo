@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="VeloDashboard">
+  <trk>
+    <name>Test Climb - Moscow Hills</name>
+    <trkseg>
+      <trkpt lat="55.751244" lon="37.618423"><ele>150.0</ele></trkpt>
+      <trkpt lat="55.751300" lon="37.618500"><ele>152.5</ele></trkpt>
+      <trkpt lat="55.751400" lon="37.618600"><ele>156.0</ele></trkpt>
+      <trkpt lat="55.751500" lon="37.618750"><ele>161.2</ele></trkpt>
+      <trkpt lat="55.751600" lon="37.618900"><ele>168.5</ele></trkpt>
+      <trkpt lat="55.751700" lon="37.619100"><ele>175.0</ele></trkpt>
+      <trkpt lat="55.751800" lon="37.619300"><ele>180.3</ele></trkpt>
+      <trkpt lat="55.751900" lon="37.619500"><ele>184.1</ele></trkpt>
+      <trkpt lat="55.752000" lon="37.619700"><ele>186.0</ele></trkpt>
+      <trkpt lat="55.752100" lon="37.619900"><ele>185.5</ele></trkpt>
+      <trkpt lat="55.752200" lon="37.620100"><ele>183.0</ele></trkpt>
+      <trkpt lat="55.752300" lon="37.620300"><ele>179.2</ele></trkpt>
+      <trkpt lat="55.752400" lon="37.620500"><ele>175.0</ele></trkpt>
+      <trkpt lat="55.752500" lon="37.620700"><ele>170.5</ele></trkpt>
+      <trkpt lat="55.752600" lon="37.620900"><ele>165.0</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

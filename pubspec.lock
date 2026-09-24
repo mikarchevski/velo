@@ -160,6 +160,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  gpx:
+    dependency: "direct main"
+    description:
+      name: gpx
+      sha256: "1ab97d83824ce5d853b98c3ad13867ffa7f0a7aa175babb4f5c3d038c156961c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.0"
   leak_tracker:
     dependency: transitive
     description:

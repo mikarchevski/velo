@@ -9,6 +9,15 @@ import 'bluetooth_manager.dart';
 import 'perspective_road.dart';
 import 'gpx_loader.dart';
 
+// void main() {
+//   runApp(
+//     ChangeNotifierProvider(
+//       create: (_) => BluetoothManager(),
+//       child: const VeloApp(),
+
+//     ),
+//   );
+// }
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -62,10 +71,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double distance = 0.0;
   double pedalAngle = 0.0;
   DateTime? _lastUpdateTime;
-
-  // Переменная для ограничения частоты отправки команд по BLE (максимум 2 раза в секунду)
-  DateTime _lastSimulationUpdate = DateTime.now();
-
   RouteData? _currentRoute;
   final double riderWeight = 80.0;
 
@@ -126,10 +131,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
       body: isRiding
-          ? _buildRideScreen(btManager, isPhone)
+          ? _buildRideScreen(btManager)
           : (isShowingConnectionScreen
               ? _buildConnectionUI(btManager)
-              : _buildDashboardUI(btManager, isPhone)),
+              : _buildDashboardUI(btManager)),
     );
   }
 
@@ -263,11 +268,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDashboardUI(BluetoothManager btManager, bool isPhone) {
+  Widget _buildDashboardUI(BluetoothManager btManager) {
+    // ИСПРАВЛЕНИЕ: используем shortestSide вместо width!
+    // В горизонтальном режиме shortestSide — это высота экрана (например, 360-400),
+    // что корректно отличает телефон от планшета, независимо от поворота.
     final shortestSide = MediaQuery.sizeOf(context).shortestSide;
-    final isPhoneLocal = shortestSide < 600;
+    final isPhone = shortestSide < 600;
 
-    if (isPhoneLocal) {
+    if (isPhone) {
       return SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -287,7 +295,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           compact: true,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(
+                          width: 8), // Чуть уменьшил отступы для экономии места
                       Expanded(
                         child: _buildDataCard(
                           'МОЩНОСТЬ',
@@ -323,7 +332,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 16),
               SizedBox(
-                width: double.infinity,
+                width: double
+                    .infinity, // Растягиваем на всю доступную ширину (вместо жестких 320)
                 height: 56,
                 child: ElevatedButton(
                   onPressed: btManager.isConnected ? _startRide : null,
@@ -355,6 +365,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
+    // Планшетный интерфейс (для устройств, где shortestSide >= 600)
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -416,8 +427,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildRideScreen(BluetoothManager btManager, bool isPhone) {
-    // ВАЖНО: Мы УБРАЛИ отсюда вызов updateGradient, чтобы избежать ошибки "setState during build"
+  Widget _buildRideScreen(BluetoothManager btManager) {
+    final size = MediaQuery.sizeOf(context);
+    final isPhone = size.shortestSide < 600;
+    btManager.updateGradient(elevationProfile, distance, totalRouteDistance);
+
     return Stack(
       children: [
         Column(
@@ -610,6 +624,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadRoute() async {
+    // Загружаем тестовый маршрут из assets
     final route = await GpxLoader.fromAsset('assets/tracks/test_climb.gpx');
 
     if (route.isEmpty) {
@@ -643,7 +658,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _startRide() async {
-    await _loadRoute();
+    await _loadRoute(); // <-- ИСПРАВЛЕНО: ждем загрузки GPX вместо несуществующего _generateTestRoute
 
     setState(() {
       isRiding = true;
@@ -652,37 +667,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
       distance = 0.0;
       pedalAngle = 0.0;
       _lastUpdateTime = null;
-      _lastSimulationUpdate =
-          DateTime.now(); // Сброс таймера симуляции при старте
     });
     print("🚴 Заезд начат!");
 
-    _rideTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    _rideTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
       final now = DateTime.now();
       final deltaTime = _lastUpdateTime != null
           ? now.difference(_lastUpdateTime!).inMilliseconds / 1000.0
-          : 0.1;
+          : 0.016;
       _lastUpdateTime = now;
 
       final btManager = context.read<BluetoothManager>();
 
       setState(() {
-        rideDuration += const Duration(milliseconds: 100);
+        rideDuration += const Duration(milliseconds: 16);
+
         if (btManager.speed > 1.0) {
-          movingDuration += const Duration(milliseconds: 100);
+          movingDuration += const Duration(milliseconds: 16);
         }
+
         distance += (btManager.speed / 3.6) * deltaTime;
         pedalAngle += btManager.cadence * (2 * math.pi / 60) * deltaTime;
       });
+      // --- НОВАЯ ЛОГИКА СОПРОТИВЛЕНИЯ ---
 
-      // --- ПРАВИЛЬНАЯ ЛОГИКА СИМУЛЯЦИИ РЕЛЬЕФА ---
       btManager.updateGradient(elevationProfile, distance, totalRouteDistance);
 
-      // Отправляем параметры симуляции на станок не чаще 2 раз в секунду (500 мс)
-      if (now.difference(_lastSimulationUpdate).inMilliseconds > 500) {
-        _lastSimulationUpdate = now;
-        btManager.setSimulationParameters(btManager.gradient);
-      }
+      // Расчет требуемой мощности
+      double speedMs = btManager.speed / 3.6;
+      double gradientDecimal = btManager.gradient / 100.0;
+      double rollingResistance =
+          0.005; // Базовое сопротивление качению асфальта
+
+      // Формула: Вес * гравитация * (уклон + сопротивление) * скорость
+      double requiredPower =
+          riderWeight * 9.81 * (gradientDecimal + rollingResistance) * speedMs;
+
+      // На спуске мощность может быть отрицательной, но станки это не умеют (они просто сбрасывают сопротивление в 0)
+      int targetWatts = requiredPower.round();
+
+      // Отправляем команду на станок
+      btManager.setTargetPower(targetWatts);
     });
   }
 

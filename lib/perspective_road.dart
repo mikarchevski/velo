@@ -1,3 +1,4 @@
+// lib/perspective_road.dart
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -5,389 +6,294 @@ class PerspectiveRoadPainter extends CustomPainter {
   final List<double> elevationData;
   final double currentDistance;
   final double totalDistance;
+  final double currentGradient;
   final double currentSpeed;
   final double cadence;
   final double pedalAngle;
+  final double roadAnimationPhase;
+
+  final int segments = 30;
+  final double visualElevationScale = 2.0;
 
   PerspectiveRoadPainter({
     required this.elevationData,
     required this.currentDistance,
     required this.totalDistance,
+    required this.currentGradient,
     required this.currentSpeed,
     required this.cadence,
     required this.pedalAngle,
+    required this.roadAnimationPhase,
   });
+
+  double _getElevationAt(double distance) {
+    if (elevationData.isEmpty) return 0.0;
+    double normalizedIndex =
+        (distance / totalDistance) * (elevationData.length - 1);
+    normalizedIndex = normalizedIndex.clamp(0.0, elevationData.length - 1.0);
+
+    int index1 = normalizedIndex.floor();
+    int index2 = (index1 + 1).clamp(0, elevationData.length - 1);
+    double fraction = normalizedIndex - index1;
+
+    return elevationData[index1] +
+        (elevationData[index2] - elevationData[index1]) * fraction;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (elevationData.isEmpty) return;
+    _drawSky(canvas, size);
+    _drawMountains(canvas, size);
+    _drawRoad(canvas, size);
+    _drawCyclist(canvas, size); // 🚀 Рисуем велосипедиста
+  }
 
+  void _drawSky(Canvas canvas, Size size) {
+    final skyRect = Rect.fromLTWH(0, 0, size.width, size.height * 0.6);
+    final gradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: const [
+        Color(0xFF0F2027),
+        Color(0xFF203A43),
+        Color(0xFF2C5364),
+      ],
+      stops: const [0.0, 0.6, 1.0],
+    );
+
+    final paint = Paint()
+      ..shader = gradient.createShader(skyRect)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(skyRect, paint);
+    _drawCelestialBody(canvas, size);
+  }
+
+  void _drawCelestialBody(Canvas canvas, Size size) {
+    final sunX = size.width * 0.8;
+    final sunY = size.height * 0.15;
+    final sunRadius = size.width * 0.04;
+
+    final sunPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.9)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+
+    canvas.drawCircle(Offset(sunX, sunY), sunRadius, sunPaint);
+
+    final glowPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
+
+    canvas.drawCircle(Offset(sunX, sunY), sunRadius * 2.5, glowPaint);
+  }
+
+  void _drawMountains(Canvas canvas, Size size) {
+    final vanishingPointY = size.height * 0.4;
+    final baseElevation = _getElevationAt(currentDistance);
+
+    for (int layer = 0; layer < 3; layer++) {
+      final path = Path();
+      final layerOffset = layer * 40.0;
+      final mountainColor = [
+        const Color(0xFF1a1a2e),
+        const Color(0xFF16213e),
+        const Color(0xFF0f3460),
+      ][layer];
+
+      path.moveTo(0, vanishingPointY);
+
+      final distanceOffset = currentDistance * (2.0 + layer * 1.5);
+
+      for (double x = 0; x <= size.width; x += 5) {
+        final normalizedX = x / size.width;
+
+        double height = 0;
+        height += math.sin((normalizedX * 8) + (distanceOffset * 0.001)) * 25;
+        height += math.sin((normalizedX * 4) + (distanceOffset * 0.002)) * 45;
+        height += math.sin((normalizedX * 2) + (distanceOffset * 0.0005)) * 70;
+
+        final elevIndex = ((normalizedX * 200) % elevationData.length).floor();
+        if (elevationData.isNotEmpty) {
+          height += (elevationData[elevIndex] - baseElevation) * 0.15;
+        }
+
+        final y = vanishingPointY - height - layerOffset;
+        path.lineTo(x, y);
+      }
+
+      path.lineTo(size.width, size.height);
+      path.lineTo(0, size.height);
+      path.close();
+
+      final paint = Paint()
+        ..color = mountainColor.withOpacity(0.85 - (layer * 0.2))
+        ..style = PaintingStyle.fill;
+
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawRoad(Canvas canvas, Size size) {
     final vanishingPointX = size.width / 2;
     final vanishingPointY = size.height * 0.4;
+    final baseElevation = _getElevationAt(currentDistance);
 
-    // Рисуем небо
-    final skyPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [const Color(0xFF1E88E5), const Color(0xFF64B5F6)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, vanishingPointY));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, vanishingPointY), skyPaint);
+    final groundPaint = Paint()
+      ..color = const Color(0xFF1a472a)
+      ..style = PaintingStyle.fill;
 
-    // Рисуем рельеф (силуэт холмов на горизонте)
-    _drawTerrain(canvas, size, vanishingPointX, vanishingPointY);
-
-    // Рисуем траву
-    final grassPaint = Paint()..color = const Color(0xFF4CAF50);
     canvas.drawRect(
-      Rect.fromLTWH(
-        0,
-        vanishingPointY,
-        size.width,
-        size.height - vanishingPointY,
-      ),
-      grassPaint,
+      Rect.fromLTWH(0, vanishingPointY, size.width, size.height * 0.6),
+      groundPaint,
     );
 
-    // Рисуем дорогу
-    _drawRoad(canvas, size, vanishingPointX, vanishingPointY);
+    for (int i = 0; i < segments; i++) {
+      double t1 = i / segments;
+      double t2 = (i + 1) / segments;
 
-    // Рисуем велосипедиста
-    _drawCyclist(canvas, size);
-  }
+      double p1 = math.pow(t1, 2.5).toDouble();
+      double p2 = math.pow(t2, 2.5).toDouble();
 
-  void _drawTerrain(
-    Canvas canvas,
-    Size size,
-    double vanishingPointX,
-    double vanishingPointY,
-  ) {
-    if (elevationData.isEmpty) return;
+      double y1Base = vanishingPointY + (size.height - vanishingPointY) * p1;
+      double y2Base = vanishingPointY + (size.height - vanishingPointY) * p2;
 
-    // Находим мин/макс высоту для масштабирования
-    double minElev = elevationData.reduce((a, b) => a < b ? a : b);
-    double maxElev = elevationData.reduce((a, b) => a > b ? a : b);
-    double elevRange = maxElev - minElev;
-    if (elevRange == 0) elevRange = 1;
+      double lookAheadMax = 100.0;
+      double dist1 = currentDistance + (t1 * lookAheadMax);
+      double dist2 = currentDistance + (t2 * lookAheadMax);
 
-    // Показываем участок трассы вокруг текущей позиции
-    double viewRange = totalDistance * 0.3; // Показываем 30% трассы
+      double elev1 = _getElevationAt(dist1) - baseElevation;
+      double elev2 = _getElevationAt(dist2) - baseElevation;
 
-    if (viewRange < 100) viewRange = 100;
+      double yShift1 = -elev1 * visualElevationScale;
+      double yShift2 = -elev2 * visualElevationScale;
 
-    double screenStartDistance = currentDistance - viewRange;
-    double screenEndDistance = currentDistance + viewRange * 2;
+      double y1 = y1Base + yShift1;
+      double y2 = y2Base + yShift2;
 
-    // Рисуем силуэт рельефа
-    final terrainPath = Path();
-    bool isFirstPoint = true;
+      double width1 = 5.0 + (size.width * 0.5) * p1;
+      double width2 = 5.0 + (size.width * 0.5) * p2;
 
-    for (int i = 0; i < elevationData.length; i++) {
-      double pointDistance = (i / elevationData.length) * totalDistance;
+      final path = Path();
+      path.moveTo(vanishingPointX - width1, y1);
+      path.lineTo(vanishingPointX + width1, y1);
+      path.lineTo(vanishingPointX + width2, y2);
+      path.lineTo(vanishingPointX - width2, y2);
+      path.close();
 
-      if (pointDistance >= screenStartDistance &&
-          pointDistance <= screenEndDistance) {
-        double x = ((pointDistance - screenStartDistance) /
-                (screenEndDistance - screenStartDistance)) *
-            size.width;
+      final double segmentValue = i + (roadAnimationPhase * 2.0);
+      final bool isDark = (segmentValue % 2.0) < 1.0;
 
-        // Масштабируем высоту: максимум 60 пикселей выше горизонта
-        double normalizedElev = (elevationData[i] - minElev) / elevRange;
-        double y = vanishingPointY - (normalizedElev * 60);
+      final paint = Paint()
+        ..color = isDark ? const Color(0xFF374151) : const Color(0xFF4B5563)
+        ..style = PaintingStyle.fill;
 
-        if (isFirstPoint) {
-          terrainPath.moveTo(x, y);
-          isFirstPoint = false;
-        } else {
-          terrainPath.lineTo(x, y);
-        }
+      canvas.drawPath(path, paint);
+
+      if (isDark) {
+        final linePaint = Paint()
+          ..color = Colors.yellow.withOpacity(0.9)
+          ..strokeWidth = 2.5
+          ..style = PaintingStyle.stroke;
+
+        final lineWidth1 = width1 * 0.05;
+        final lineWidth2 = width2 * 0.05;
+
+        canvas.drawLine(Offset(vanishingPointX - lineWidth1, y1),
+            Offset(vanishingPointX - lineWidth2, y2), linePaint);
+        canvas.drawLine(Offset(vanishingPointX + lineWidth1, y1),
+            Offset(vanishingPointX + lineWidth2, y2), linePaint);
       }
+
+      final edgePaint = Paint()
+        ..color = Colors.white.withOpacity(0.7)
+        ..strokeWidth = 2.0
+        ..style = PaintingStyle.stroke;
+
+      canvas.drawLine(Offset(vanishingPointX - width1, y1),
+          Offset(vanishingPointX - width2, y2), edgePaint);
+      canvas.drawLine(Offset(vanishingPointX + width1, y1),
+          Offset(vanishingPointX + width2, y2), edgePaint);
     }
-
-    // Замыкаем путь вниз до горизонта
-    terrainPath.lineTo(size.width, vanishingPointY);
-    terrainPath.lineTo(0, vanishingPointY);
-    terrainPath.close();
-
-    // Рисуем рельеф полупрозрачным зелёным (как дальние холмы)
-    final terrainPaint = Paint()
-      ..color = const Color(0xFF2E7D32).withOpacity(0.7)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(terrainPath, terrainPaint);
-
-    // Рисуем линию профиля (контур)
-    final profilePaint = Paint()
-      ..color = const Color(0xFF1B5E20)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(terrainPath, profilePaint);
   }
 
-  void _drawRoad(
-    Canvas canvas,
-    Size size,
-    double vanishingPointX,
-    double vanishingPointY,
-  ) {
-    final roadPath = Path();
-    final roadWidthBottom = size.width * 0.8;
-    final roadWidthHorizon = 20.0;
-
-    roadPath.moveTo(vanishingPointX - roadWidthHorizon, vanishingPointY);
-    roadPath.lineTo(vanishingPointX - roadWidthBottom, size.height);
-    roadPath.lineTo(vanishingPointX + roadWidthBottom, size.height);
-    roadPath.lineTo(vanishingPointX + roadWidthHorizon, vanishingPointY);
-    roadPath.close();
-
-    final roadPaint = Paint()
-      ..color = const Color(0xFF424242)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(roadPath, roadPaint);
-
-    final linePaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    final animationOffset = (currentDistance * 50) % 100;
-
-    for (double i = animationOffset; i < size.height; i += 100) {
-      final progress = (i - vanishingPointY) / (size.height - vanishingPointY);
-      if (progress < 0) continue;
-
-      final x = vanishingPointX;
-      final y = vanishingPointY + (size.height - vanishingPointY) * progress;
-      final lineWidth = 20 * progress;
-
-      canvas.drawLine(
-        Offset(x - lineWidth, y),
-        Offset(x + lineWidth, y),
-        linePaint,
-      );
-    }
-
-    final edgePaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 4
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(vanishingPointX - roadWidthHorizon, vanishingPointY),
-      Offset(vanishingPointX - roadWidthBottom, size.height),
-      edgePaint,
-    );
-    canvas.drawLine(
-      Offset(vanishingPointX + roadWidthHorizon, vanishingPointY),
-      Offset(vanishingPointX + roadWidthBottom, size.height),
-      edgePaint,
-    );
-  }
-
+  // 🚀 НОВЫЙ МЕТОД: Рисуем силуэт велосипедиста
   void _drawCyclist(Canvas canvas, Size size) {
+    // Масштабируем размер велосипедиста относительно высоты экрана
+    final double scale = size.height / 500.0;
+
+    // 🚀 МАГИЯ: Покачивание в такт педалированию.
+    // sin(pedalAngle) плавно меняется от -1 до 1 при каждом обороте педалей.
+    final double bounce = math.sin(pedalAngle) * 4.0 * scale;
+
     final centerX = size.width / 2;
-    final bottomY = size.height - 50;
+    final baseY = size.height - (30 * scale); // Базовая позиция снизу
 
-    // БОЛЬШИЕ смещения для выраженного 3/4 ракурса
-    final offsetX = 40.0; // Насколько вбок сдвигаем ближние элементы
-    final offsetY = 15.0; // Насколько вниз сдвигаем ближние элементы
-
-    // Тень (смещена вправо)
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.3)
-      ..style = PaintingStyle.fill;
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(centerX + offsetX * 0.5, bottomY + 10),
-        width: 80,
-        height: 20,
-      ),
-      shadowPaint,
-    );
-
-    // Заднее колесо (наклоненный эллипс - виден правый бок)
-    final wheelPaint = Paint()
-      ..color = const Color(0xFF212121)
-      ..strokeWidth = 4
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(centerX, bottomY),
-        width: 50, // Широкое колесо (вид сбоку)
-        height: 45,
-      ),
-      wheelPaint,
-    );
-
-    // Спицы (вращаются по эллипсу)
-    final spokePaint = Paint()
-      ..color = const Color(0xFF757575)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final wheelRotation = (currentDistance * 10) % (2 * math.pi);
-    final wheelRadiusX = 25.0;
-    final wheelRadiusY = 22.5;
-
-    for (int i = 0; i < 4; i++) {
-      final angle = wheelRotation + (i * math.pi / 2);
-      final x1 = centerX + math.cos(angle) * wheelRadiusX;
-      final y1 = bottomY + math.sin(angle) * wheelRadiusY;
-      final x2 = centerX + math.cos(angle + math.pi) * wheelRadiusX;
-      final y2 = bottomY + math.sin(angle + math.pi) * wheelRadiusY;
-      canvas.drawLine(Offset(x1, y1), Offset(x2, y2), spokePaint);
-    }
-
-    // ЛЕВАЯ НОГА (дальняя) - рисуем ПЕРВОЙ
-    final legPaint = Paint()
-      ..color = const Color(0xFF212121)
-      ..strokeWidth = 10
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final crankCenterX = centerX + offsetX * 0.3;
-    final crankCenterY = bottomY - 5;
-    final crankRadiusX = 20.0;
-    final crankRadiusY = 25.0;
-
-    final leftHipX = centerX - 10;
-    final leftHipY = bottomY - 30;
-
-    final leftPedalX =
-        crankCenterX + math.cos(pedalAngle + math.pi) * crankRadiusX;
-    final leftPedalY =
-        crankCenterY + math.sin(pedalAngle + math.pi) * crankRadiusY;
-
-    // Левая нога
-    double leftKneeX = (leftHipX + leftPedalX) / 2;
-    double leftKneeY = (leftHipY + leftPedalY) / 2 + 5;
-    canvas.drawLine(
-        Offset(leftHipX, leftHipY), Offset(leftKneeX, leftKneeY), legPaint);
-    canvas.drawLine(
-        Offset(leftKneeX, leftKneeY), Offset(leftPedalX, leftPedalY), legPaint);
-
-    // Левая педаль
-    final pedalPaint = Paint()..color = const Color(0xFF757575);
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(leftPedalX, leftPedalY),
-        width: 14,
-        height: 7,
-      ),
-      pedalPaint,
-    );
-
-    // Рама (параллелограмм - наклонена вправо)
-    final bikePaint = Paint()
-      ..color = const Color(0xFF00BCD4)
-      ..strokeWidth = 7
-      ..style = PaintingStyle.stroke;
-
-    // Левая стойка (дальняя)
-    canvas.drawLine(
-      Offset(centerX - 20, bottomY - 35),
-      Offset(centerX - 25, bottomY + 5),
-      bikePaint,
-    );
-    // Правая стойка (ближняя)
-    canvas.drawLine(
-      Offset(centerX + 20, bottomY - 30),
-      Offset(centerX + 30, bottomY + 10),
-      bikePaint,
-    );
-    // Верхняя перекладина
-    canvas.drawLine(
-      Offset(centerX - 20, bottomY - 35),
-      Offset(centerX + 20, bottomY - 30),
-      bikePaint,
-    );
-
-    // Тело (трапеция - виден правый бок)
-    final bodyPaint = Paint()
-      ..color = Colors.white
+    final paint = Paint()
+      ..color = Colors.black.withOpacity(0.85)
       ..style = PaintingStyle.fill;
 
-    final bodyPath = Path();
-    bodyPath.moveTo(centerX - 25, bottomY - 85); // Левое плечо (дальнее)
-    bodyPath.lineTo(centerX + 35, bottomY - 80); // Правое плечо (ближнее)
-    bodyPath.lineTo(centerX + 45, bottomY - 25); // Правый бок (ближний)
-    bodyPath.lineTo(centerX - 30, bottomY - 30); // Левый бок (дальний)
-    bodyPath.close();
-    canvas.drawPath(bodyPath, bodyPaint);
+    // Рисуем с небольшим смещением bounce по оси Y
+    canvas.save();
+    canvas.translate(0, bounce);
 
-    // ПРАВАЯ НОГА (ближняя) - рисуем ПОВЕРХ тела
-    final rightHipX = centerX + 25;
-    final rightHipY = bottomY - 25;
+    // 1. Колёса
+    final wheelRadius = 18.0 * scale;
+    final rearWheel = Offset(centerX - 35 * scale, baseY);
+    final frontWheel = Offset(centerX + 35 * scale, baseY);
 
-    final rightPedalX = crankCenterX + math.cos(pedalAngle) * crankRadiusX;
-    final rightPedalY = crankCenterY + math.sin(pedalAngle) * crankRadiusY;
+    canvas.drawCircle(rearWheel, wheelRadius, paint);
+    canvas.drawCircle(frontWheel, wheelRadius, paint);
 
-    // Правая нога
-    double rightKneeX = (rightHipX + rightPedalX) / 2;
-    double rightKneeY = (rightHipY + rightPedalY) / 2 + 5;
-    canvas.drawLine(
-        Offset(rightHipX, rightHipY), Offset(rightKneeX, rightKneeY), legPaint);
-    canvas.drawLine(Offset(rightKneeX, rightKneeY),
-        Offset(rightPedalX, rightPedalY), legPaint);
+    // 2. Рама и руль (упрощённый силуэт)
+    final framePath = Path();
+    framePath.moveTo(centerX - 35 * scale, baseY); // Задняя ось
+    framePath.lineTo(
+        centerX - 10 * scale, baseY - 35 * scale); // Подседельный штырь
+    framePath.lineTo(centerX + 15 * scale, baseY - 35 * scale); // Верхняя труба
+    framePath.lineTo(centerX + 35 * scale, baseY); // Передняя вилка
+    framePath.lineTo(centerX + 5 * scale, baseY - 10 * scale); // Каретка
+    framePath.close();
+    canvas.drawPath(framePath, paint);
 
-    // Правая педаль
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(rightPedalX, rightPedalY),
-        width: 14,
-        height: 7,
-      ),
-      pedalPaint,
-    );
+    // 3. Седло и руль
+    final seatPath = Path();
+    seatPath.moveTo(centerX - 15 * scale, baseY - 38 * scale);
+    seatPath.lineTo(centerX - 5 * scale, baseY - 38 * scale);
+    seatPath.lineTo(centerX - 5 * scale, baseY - 35 * scale);
+    seatPath.close();
+    canvas.drawPath(seatPath, paint);
 
-    // Каретка
-    final crankPaint = Paint()..color = const Color(0xFF424242);
-    canvas.drawCircle(Offset(crankCenterX, crankCenterY), 10, crankPaint);
+    final handlebarPath = Path();
+    handlebarPath.moveTo(centerX + 15 * scale, baseY - 35 * scale);
+    handlebarPath.lineTo(centerX + 25 * scale, baseY - 40 * scale);
+    handlebarPath.lineTo(centerX + 28 * scale, baseY - 38 * scale);
+    handlebarPath.close();
+    canvas.drawPath(handlebarPath, paint);
 
-    // Голова (смещена вправо)
-    final headPaint = Paint()..color = const Color(0xFFFFCC80);
-    canvas.drawCircle(
-      Offset(centerX + offsetX * 0.4, bottomY - 95),
-      20,
-      headPaint,
-    );
+    // 4. Силуэт гонщика (голова и торс)
+    final riderPath = Path();
+    // Голова
+    riderPath.addOval(Rect.fromCircle(
+        center: Offset(centerX + 5 * scale, baseY - 55 * scale),
+        radius: 7 * scale));
+    // Торс и руки (аэропосадка)
+    riderPath.moveTo(centerX + 5 * scale, baseY - 48 * scale);
+    riderPath.lineTo(centerX - 5 * scale, baseY - 38 * scale); // Спина к седлу
+    riderPath.lineTo(centerX + 25 * scale, baseY - 40 * scale); // Руки к рулю
+    riderPath.lineTo(
+        centerX + 15 * scale, baseY - 35 * scale); // Возврат к раме
+    riderPath.close();
+    canvas.drawPath(riderPath, paint);
 
-    // Шлем (смещен вправо)
-    final helmetPaint = Paint()..color = const Color(0xFFE53935);
-    canvas.drawArc(
-      Rect.fromCenter(
-        center: Offset(centerX + offsetX * 0.4, bottomY - 100),
-        width: 42,
-        height: 28,
-      ),
-      math.pi,
-      math.pi,
-      true,
-      helmetPaint,
-    );
-
-    // Руки (правая ближе, левая дальше)
-    final armPaint = Paint()
-      ..color = const Color(0xFFFFCC80)
-      ..strokeWidth = 7
-      ..style = PaintingStyle.stroke;
-
-    // Левая рука (дальняя)
-    canvas.drawLine(
-      Offset(centerX - 20, bottomY - 65),
-      Offset(centerX - 30, bottomY - 50),
-      armPaint,
-    );
-    // Правая рука (ближняя)
-    canvas.drawLine(
-      Offset(centerX + 30, bottomY - 63),
-      Offset(centerX + 45, bottomY - 48),
-      armPaint,
-    );
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
+  bool shouldRepaint(covariant PerspectiveRoadPainter oldDelegate) {
+    return oldDelegate.currentDistance != currentDistance ||
+        oldDelegate.currentGradient != currentGradient ||
+        oldDelegate.pedalAngle !=
+            pedalAngle || // Важно для анимации велосипедиста!
+        oldDelegate.roadAnimationPhase != roadAnimationPhase;
   }
 }

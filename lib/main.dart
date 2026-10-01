@@ -7,7 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import 'bluetooth_manager.dart';
-import 'widgets/gpx_loader.dart';
+import 'gpx_loader.dart';
 import 'services/route_calculator.dart';
 import 'widgets/connection_view.dart';
 import 'widgets/dashboard_view.dart';

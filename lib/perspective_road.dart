@@ -40,17 +40,17 @@ class PerspectiveRoadPainter extends CustomPainter {
         (elevationData[index2] - elevationData[index1]) * fraction;
   }
 
-    double _getCurveAt(double distance) {
-      if (curveData.isEmpty) return 0.0;
-      double normalizedIndex = (distance / totalDistance) * (curveData.length - 1);
-      normalizedIndex = normalizedIndex.clamp(0.0, curveData.length - 1.0);
+  double _getCurveAt(double distance) {
+  if (curveData.isEmpty) return 0.0;
+  double normalizedIndex = (distance / totalDistance) * (curveData.length - 1);
+  normalizedIndex = normalizedIndex.clamp(0.0, curveData.length - 1.0);
 
-      int index1 = normalizedIndex.floor();
-      int index2 = (index1 + 1).clamp(0, curveData.length - 1);
-      double fraction = normalizedIndex - index1;
+  int index1 = normalizedIndex.floor();
+  int index2 = (index1 + 1).clamp(0, curveData.length - 1);
+  double fraction = normalizedIndex - index1;
 
-      return curveData[index1] + (curveData[index2] - curveData[index1]) * fraction;
-    }
+  return curveData[index1] + (curveData[index2] - curveData[index1]) * fraction;
+}
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -147,22 +147,23 @@ class PerspectiveRoadPainter extends CustomPainter {
     }
   }
 
-    void _drawRoad(Canvas canvas, Size size) {
+  void _drawRoad(Canvas canvas, Size size) {
     final vanishingPointX = size.width / 2;
-    final vanishingPointY = size.height * 0.22;
+    final vanishingPointY = size.height * 0.22; // 🚀 Точка схода поднята
     final baseElevation = _getElevationAt(currentDistance);
 
-    // 1. Рисуем землю (фон)
+    final groundPaint = Paint()
+      ..color = const Color(0xFF1a472a)
+      ..style = PaintingStyle.fill;
+
     canvas.drawRect(
       Rect.fromLTWH(0, vanishingPointY, size.width, size.height - vanishingPointY),
-      Paint()..color = const Color(0xFF1a472a)..style = PaintingStyle.fill,
+      groundPaint,
     );
 
+    // 🚀 РЕЗКО УСИЛЕННАЯ ПЕРСПЕКТИВА для вида сверху
+    // Было 2.5, стало 4.0 — ближние сегменты огромные, дальние крошечные
     const double perspectivePower = 4.0;
-    
-    // 🚀 УВЕЛИЧИЛИ МАКСИМАЛЬНЫЙ СДВИГ ДО 50% ШИРИНЫ ЭКРАНА
-    // Это сделает поворот гипертрофированно заметным для проверки
-    final double maxShift = size.width * 0.5; 
 
     for (int i = 0; i < segments; i++) {
       double t1 = i / segments;
@@ -181,70 +182,67 @@ class PerspectiveRoadPainter extends CustomPainter {
       double elev1 = _getElevationAt(dist1) - baseElevation;
       double elev2 = _getElevationAt(dist2) - baseElevation;
 
-      double y1 = y1Base - elev1 * visualElevationScale;
-      double y2 = y2Base - elev2 * visualElevationScale;
+      double yShift1 = -elev1 * visualElevationScale;
+      double yShift2 = -elev2 * visualElevationScale;
 
-      // 🚀 ПОЛУЧАЕМ ЗНАЧЕНИЕ ПОВОРОТА (-1.0 до 1.0)
+      double y1 = y1Base + yShift1;
+      double y2 = y2Base + yShift2;
+
       double curve1 = _getCurveAt(dist1);
       double curve2 = _getCurveAt(dist2);
+      double maxShift = size.width * 0.35;
 
-      // 🚀 ВЫЧИСЛЯЕМ РЕАЛЬНЫЙ ЦЕНТР ДОРОГИ С УЧЁТОМ ИЗГИБА
-      double centerX1 = vanishingPointX + (curve1 * maxShift);
-      double centerX2 = vanishingPointX + (curve2 * maxShift);
-
-      // Отладочный вывод для первого сегмента, чтобы доказать смещение
-      if (i == 0 && curve1.abs() > 0.1) {
-        print("🛣️ ИЗГИБ: centerX1 сдвинут на ${(curve1 * maxShift).toStringAsFixed(1)} пикселей (curve=$curve1)");
-      }
-
-      // Ширина дороги
+      //  ДОРОГА ОЧЕНЬ ШИРОКАЯ ВНИЗУ (эффект взгляда сверху)
+      // Начальная ширина 20 (было 5), коэффициент 0.6 (было 0.5)
       const double roadStartWidth = 20.0;
       const double roadWidthFactor = 0.6;
+
+      double centerX1 = vanishingPointX + curve1 * maxShift;
+      double centerX2 = vanishingPointX + curve2 * maxShift;
+      
       double width1 = roadStartWidth + (size.width * roadWidthFactor) * p1;
       double width2 = roadStartWidth + (size.width * roadWidthFactor) * p2;
 
-      // 🚀 РИСУЕМ АСФАЛЬТ (ТРАПЕЦИЯ)
       final path = Path();
-      path.moveTo(centerX1 - width1, y1); // Левый верхний угол
-      path.lineTo(centerX1 + width1, y1); // Правый верхний угол
-      path.lineTo(centerX2 + width2, y2); // Правый нижний угол
-      path.lineTo(centerX2 - width2, y2); // Левый нижний угол
+      path.moveTo(vanishingPointX - width1, y1);
+      path.lineTo(vanishingPointX + width1, y1);
+      path.lineTo(vanishingPointX + width2, y2);
+      path.lineTo(vanishingPointX - width2, y2);
       path.close();
 
-      final bool isDark = ((i + (roadAnimationPhase * 2.0)) % 2.0) < 1.0;
+      final double segmentValue = i + (roadAnimationPhase * 2.0);
+      final bool isDark = (segmentValue % 2.0) < 1.0;
 
-      // Рисуем саму дорогу (асфальт)
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = isDark ? const Color(0xFF374151) : const Color(0xFF4B5563)
-          ..style = PaintingStyle.fill,
-      );
+      final paint = Paint()
+        ..color = isDark ? const Color(0xFF374151) : const Color(0xFF4B5563)
+        ..style = PaintingStyle.fill;
 
-      // 🚀 РИСУЕМ РАЗМЕТКУ (строго по тем же координатам центра!)
+      canvas.drawPath(path, paint);
+
       if (isDark) {
         final linePaint = Paint()
           ..color = Colors.yellow.withOpacity(0.9)
-          ..strokeWidth = 3.0
+          ..strokeWidth = 2.5
           ..style = PaintingStyle.stroke;
 
-        final lineWidth1 = width1 * 0.04;
-        final lineWidth2 = width2 * 0.04;
+        final lineWidth1 = width1 * 0.05;
+        final lineWidth2 = width2 * 0.05;
 
-        // Левая пунктирная линия
-        canvas.drawLine(Offset(centerX1 - lineWidth1, y1), Offset(centerX2 - lineWidth2, y2), linePaint);
-        // Правая пунктирная линия
-        canvas.drawLine(Offset(centerX1 + lineWidth1, y1), Offset(centerX2 + lineWidth2, y2), linePaint);
+        canvas.drawLine(Offset(centerX1 - lineWidth1, y1),
+            Offset(centerX2 - lineWidth2, y2), linePaint);
+        canvas.drawLine(Offset(centerX1 + lineWidth1, y1),
+            Offset(centerX2 + lineWidth2, y2), linePaint);
       }
 
-      // 🚀 РИСУЕМ БЕЛЫЕ КРАЯ (строго по краям трапеции!)
       final edgePaint = Paint()
-        ..color = Colors.white.withOpacity(0.8)
-        ..strokeWidth = 3.0
+        ..color = Colors.white.withOpacity(0.7)
+        ..strokeWidth = 2.0
         ..style = PaintingStyle.stroke;
 
-      canvas.drawLine(Offset(centerX1 - width1, y1), Offset(centerX2 - width2, y2), edgePaint);
-      canvas.drawLine(Offset(centerX1 + width1, y1), Offset(centerX2 + width2, y2), edgePaint);
+      canvas.drawLine(Offset(centerX1 - width1, y1),
+          Offset(centerX2 - width2, y2), edgePaint);
+      canvas.drawLine(Offset(centerX1 + width1, y1),
+          Offset(centerX2 + width2, y2), edgePaint);
     }
   }
 

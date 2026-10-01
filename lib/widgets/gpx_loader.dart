@@ -3,32 +3,23 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:gpx/gpx.dart';
 
-// ==========================================
-// 1. Модели данных
-// ==========================================
-
 class GeoPoint {
   final double lat;
   final double lon;
   final double elevation;
-
-  GeoPoint({
-    required this.lat,
-    required this.lon,
-    required this.elevation,
-  });
+  GeoPoint({required this.lat, required this.lon, required this.elevation});
 }
 
 class RouteData {
   final List<double> elevations;
-  final List<double> curves;
+  final List<double> curves; // 🚀 ДОБАВЛЕНО
   final double totalDistance;
   final String name;
   final List<GeoPoint> points;
 
   RouteData({
     required this.elevations,
-    required this.curves,
+    required this.curves, // 🚀 ДОБАВЛЕНО
     required this.totalDistance,
     required this.name,
     required this.points,
@@ -45,28 +36,13 @@ class RouteData {
   int get pointCount => elevations.length;
 }
 
-// ==========================================
-// 2. Загрузчик GPX
-// ==========================================
-
 class GpxLoader {
   static RouteData fromString(String gpxString, {String name = 'Unknown Route'}) {
     try {
       final gpx = GpxReader().fromString(gpxString);
       return _parseGpx(gpx, name);
     } catch (e) {
-      print("❌ Ошибка парсинга GPX из строки: $e");
-      return RouteData.empty();
-    }
-  }
-
-  static Future<RouteData> fromFile(File file) async {
-    try {
-      final content = await file.readAsString();
-      final name = file.uri.pathSegments.last.replaceAll('.gpx', '');
-      return fromString(content, name: name);
-    } catch (e) {
-      print("❌ Ошибка чтения GPX-файла: $e");
+      print("❌ Ошибка парсинга GPX: $e");
       return RouteData.empty();
     }
   }
@@ -82,119 +58,86 @@ class GpxLoader {
     }
   }
 
-  // ==========================================
-  // 3. Внутренняя логика парсинга
-  // ==========================================
-
   static RouteData _parseGpx(Gpx gpx, String fallbackName) {
-    if (gpx.trks.isEmpty) {
+    if (gpx.trks.isEmpty || gpx.trks.first.trksegs.isEmpty) {
       return RouteData.empty();
     }
 
-    final track = gpx.trks.first;
-    final routeName = track.name ?? fallbackName;
-
-    if (track.trksegs.isEmpty) {
-      return RouteData.empty();
-    }
-
-    final points = track.trksegs.first.trkpts;
+    final points = gpx.trks.first.trksegs.first.trkpts;
     final elevations = <double>[];
     final geoPoints = <GeoPoint>[];
     double totalDistance = 0.0;
 
     for (int i = 0; i < points.length; i++) {
       final pt = points[i];
-      final elevation = pt.ele ?? 0.0;
       final lat = pt.lat ?? 0.0;
       final lon = pt.lon ?? 0.0;
+      final elevation = pt.ele ?? 0.0;
 
       elevations.add(elevation);
       geoPoints.add(GeoPoint(lat: lat, lon: lon, elevation: elevation));
 
       if (i > 0) {
         final prevPt = points[i - 1];
-        final prevLat = prevPt.lat ?? 0.0;
-        final prevLon = prevPt.lon ?? 0.0;
-        totalDistance += _calculateDistance(lat, lon, prevLat, prevLon);
+        totalDistance += _calculateDistance(lat, lon, prevPt.lat ?? 0.0, prevPt.lon ?? 0.0);
       }
     }
 
     return RouteData(
       elevations: elevations,
-      curves: _calculateCurves(geoPoints),
+      curves: _calculateCurves(geoPoints), // 🚀 ВЫЧИСЛЯЕМ КРИВИЗНУ
       totalDistance: totalDistance,
-      name: routeName,
+      name: gpx.trks.first.name ?? fallbackName,
       points: geoPoints,
     );
   }
 
-  // Формула гаверсинусов для расчета расстояния между точками
   static double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    const double earthRadius = 6371000; // в метрах
-
+    const double earthRadius = 6371000;
     final dLat = _toRadians(lat2 - lat1);
     final dLon = _toRadians(lon2 - lon1);
-
     final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_toRadians(lat1)) *
-            math.cos(_toRadians(lat2)) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2);
-
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-
-    return earthRadius * c;
+        math.cos(_toRadians(lat1)) * math.cos(_toRadians(lat2)) * math.sin(dLon / 2) * math.sin(dLon / 2);
+    return earthRadius * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
   }
 
   static double _toRadians(double degrees) => degrees * math.pi / 180.0;
 
-  // ==========================================
-  // 4. Расчет кривизны (поворотов) трассы
-  // ==========================================
-
+  // 🚀 МЕТОД РАСЧЁТА ПОВОРОТОВ
   static List<double> _calculateCurves(List<GeoPoint> points) {
     if (points.length < 3) return List.filled(points.length, 0.0);
     
     List<double> bearings = [];
-    
-    // 1. Вычисляем азимут (направление) между каждой парой точек
     for (int i = 0; i < points.length - 1; i++) {
       double lat1 = points[i].lat * math.pi / 180;
       double lat2 = points[i + 1].lat * math.pi / 180;
       double dLon = (points[i + 1].lon - points[i].lon) * math.pi / 180;
       
       double y = math.sin(dLon) * math.cos(lat2);
-      double x = math.cos(lat1) * math.sin(lat2) - 
-                 math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
-      double bearing = math.atan2(y, x);
-      bearings.add(bearing);
+      double x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
+      bearings.add(math.atan2(y, x));
     }
-    bearings.add(bearings.last); // Дублируем последний элемент для совпадения длины
+    bearings.add(bearings.last);
     
-    // 2. Вычисляем разницу азимутов (изменение направления = кривизна)
     List<double> rawCurves = [];
     for (int i = 0; i < bearings.length; i++) {
       if (i == 0) {
         rawCurves.add(0.0);
       } else {
         double diff = bearings[i] - bearings[i - 1];
-        // Нормализуем к диапазону [-pi, pi]
         while (diff > math.pi) diff -= 2 * math.pi;
         while (diff < -math.pi) diff += 2 * math.pi;
         rawCurves.add(diff);
       }
     }
     
-    // 3. Находим максимальное значение для нормализации
     double maxCurve = rawCurves.fold(0.0, (max, val) => math.max(max, val.abs()));
-    if (maxCurve < 0.001) maxCurve = 0.001; // Защита от деления на ноль
+    if (maxCurve < 0.001) maxCurve = 0.001;
     
-    // 4. Нормализуем к [-1.0, 1.0] и немного сглаживаем для плавной визуализации
     List<double> smoothedCurves = [];
     for (int i = 0; i < rawCurves.length; i++) {
-      double normalized = rawCurves[i] / maxCurve;
-      normalized = normalized.clamp(-1.0, 1.0) * 0.8; // 0.8 - коэффициент сглаживания
+      // Усиливаем коэффициент до 1.5, чтобы повороты были заметны визуально
+      double normalized = (rawCurves[i] / maxCurve).clamp(-1.0, 1.0) * 1.5;
       smoothedCurves.add(normalized);
     }
     

@@ -66,7 +66,7 @@ class ActiveRideView extends StatelessWidget {
                 currentSpeed: displaySpeed,
                 cadence: displayCadence.toDouble(),
                 roadAnimationPhase: phase,
-                curveData: curveData,
+                curveData: curveData,  
               ),
             );
           },

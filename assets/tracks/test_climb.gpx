@@ -1,21 +1,181 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="VeloDashboard">
+<gpx version="1.1" creator="Velo Dashboard"
+     xmlns="http://www.topografix.com/GPX/1/1">
   <trk>
-    <name>Fun Descent - Easy Ride</name>
+    <name>Mountain Pass - Test Climb</name>
+    <desc>Тестовая трасса с перепадом высот: 200м → 950м → 150м</desc>
     <trkseg>
-      <!-- Начало: высокая точка, 300м -->
-      <trkpt lat="55.750000" lon="37.610000"><ele>300.0</ele></trkpt>
-      <trkpt lat="55.751500" lon="37.611500"><ele>280.0</ele></trkpt>
-      <trkpt lat="55.753000" lon="37.613000"><ele>260.0</ele></trkpt>
-      <trkpt lat="55.754500" lon="37.614500"><ele>240.0</ele></trkpt>
-      <trkpt lat="55.756000" lon="37.616000"><ele>220.0</ele></trkpt>
-      <trkpt lat="55.757500" lon="37.617500"><ele>200.0</ele></trkpt>
-      <trkpt lat="55.759000" lon="37.619000"><ele>180.0</ele></trkpt>
-      <trkpt lat="55.760500" lon="37.620500"><ele>160.0</ele></trkpt>
-      <trkpt lat="55.762000" lon="37.622000"><ele>140.0</ele></trkpt>
-      <trkpt lat="55.763500" lon="37.623500"><ele>120.0</ele></trkpt>
-      <!-- Конец: низкая точка, 100м -->
-      <trkpt lat="55.765000" lon="37.625000"><ele>100.0</ele></trkpt>
+      <!-- Старт: равнина на 200м (точки 1-20, ~1 км) -->
+      <trkpt lat="46.5000" lon="8.0000"><ele>200</ele></trkpt>
+      <trkpt lat="46.5005" lon="8.0010"><ele>202</ele></trkpt>
+      <trkpt lat="46.5010" lon="8.0020"><ele>205</ele></trkpt>
+      <trkpt lat="46.5015" lon="8.0030"><ele>203</ele></trkpt>
+      <trkpt lat="46.5020" lon="8.0040"><ele>208</ele></trkpt>
+      <trkpt lat="46.5025" lon="8.0050"><ele>210</ele></trkpt>
+      <trkpt lat="46.5030" lon="8.0060"><ele>207</ele></trkpt>
+      <trkpt lat="46.5035" lon="8.0070"><ele>212</ele></trkpt>
+      <trkpt lat="46.5040" lon="8.0080"><ele>215</ele></trkpt>
+      <trkpt lat="46.5045" lon="8.0090"><ele>213</ele></trkpt>
+      <trkpt lat="46.5050" lon="8.0100"><ele>218</ele></trkpt>
+      <trkpt lat="46.5055" lon="8.0110"><ele>220</ele></trkpt>
+      <trkpt lat="46.5060" lon="8.0120"><ele>217</ele></trkpt>
+      <trkpt lat="46.5065" lon="8.0130"><ele>222</ele></trkpt>
+      <trkpt lat="46.5070" lon="8.0140"><ele>225</ele></trkpt>
+      <trkpt lat="46.5075" lon="8.0150"><ele>223</ele></trkpt>
+      <trkpt lat="46.5080" lon="8.0160"><ele>228</ele></trkpt>
+      <trkpt lat="46.5085" lon="8.0170"><ele>230</ele></trkpt>
+      <trkpt lat="46.5090" lon="8.0180"><ele>232</ele></trkpt>
+      <trkpt lat="46.5095" lon="8.0190"><ele>235</ele></trkpt>
+
+      <!-- Лёгкий подъём 235м → 400м (точки 21-40, ~1 км, ~16% средний) -->
+      <trkpt lat="46.5100" lon="8.0200"><ele>250</ele></trkpt>
+      <trkpt lat="46.5105" lon="8.0210"><ele>268</ele></trkpt>
+      <trkpt lat="46.5110" lon="8.0220"><ele>285</ele></trkpt>
+      <trkpt lat="46.5115" lon="8.0230"><ele>300</ele></trkpt>
+      <trkpt lat="46.5120" lon="8.0240"><ele>315</ele></trkpt>
+      <trkpt lat="46.5125" lon="8.0250"><ele>328</ele></trkpt>
+      <trkpt lat="46.5130" lon="8.0260"><ele>340</ele></trkpt>
+      <trkpt lat="46.5135" lon="8.0270"><ele>352</ele></trkpt>
+      <trkpt lat="46.5140" lon="8.0280"><ele>365</ele></trkpt>
+      <trkpt lat="46.5145" lon="8.0290"><ele>378</ele></trkpt>
+      <trkpt lat="46.5150" lon="8.0300"><ele>385</ele></trkpt>
+      <trkpt lat="46.5155" lon="8.0310"><ele>390</ele></trkpt>
+      <trkpt lat="46.5160" lon="8.0320"><ele>395</ele></trkpt>
+      <trkpt lat="46.5165" lon="8.0330"><ele>398</ele></trkpt>
+      <trkpt lat="46.5170" lon="8.0340"><ele>400</ele></trkpt>
+      <trkpt lat="46.5175" lon="8.0350"><ele>402</ele></trkpt>
+      <trkpt lat="46.5180" lon="8.0360"><ele>405</ele></trkpt>
+      <trkpt lat="46.5185" lon="8.0370"><ele>408</ele></trkpt>
+      <trkpt lat="46.5190" lon="8.0380"><ele>410</ele></trkpt>
+      <trkpt lat="46.5195" lon="8.0390"><ele>412</ele></trkpt>
+
+      <!-- КРУТОЙ CLIMB 412м → 750м (точки 41-70, ~1.5 км, ~22% средний) -->
+      <trkpt lat="46.5200" lon="8.0400"><ele>430</ele></trkpt>
+      <trkpt lat="46.5205" lon="8.0410"><ele>450</ele></trkpt>
+      <trkpt lat="46.5210" lon="8.0420"><ele>472</ele></trkpt>
+      <trkpt lat="46.5215" lon="8.0430"><ele>495</ele></trkpt>
+      <trkpt lat="46.5220" lon="8.0440"><ele>518</ele></trkpt>
+      <trkpt lat="46.5225" lon="8.0450"><ele>540</ele></trkpt>
+      <trkpt lat="46.5230" lon="8.0460"><ele>560</ele></trkpt>
+      <trkpt lat="46.5235" lon="8.0470"><ele>580</ele></trkpt>
+      <trkpt lat="46.5240" lon="8.0480"><ele>600</ele></trkpt>
+      <trkpt lat="46.5245" lon="8.0490"><ele>618</ele></trkpt>
+      <trkpt lat="46.5250" lon="8.0500"><ele>635</ele></trkpt>
+      <trkpt lat="46.5255" lon="8.0510"><ele>650</ele></trkpt>
+      <trkpt lat="46.5260" lon="8.0520"><ele>665</ele></trkpt>
+      <trkpt lat="46.5265" lon="8.0530"><ele>678</ele></trkpt>
+      <trkpt lat="46.5270" lon="8.0540"><ele>690</ele></trkpt>
+      <trkpt lat="46.5275" lon="8.0550"><ele>702</ele></trkpt>
+      <trkpt lat="46.5280" lon="8.0560"><ele>712</ele></trkpt>
+      <trkpt lat="46.5285" lon="8.0570"><ele>722</ele></trkpt>
+      <trkpt lat="46.5290" lon="8.0580"><ele>732</ele></trkpt>
+      <trkpt lat="46.5295" lon="8.0590"><ele>742</ele></trkpt>
+      <trkpt lat="46.5300" lon="8.0600"><ele>750</ele></trkpt>
+      <trkpt lat="46.5305" lon="8.0610"><ele>752</ele></trkpt>
+      <trkpt lat="46.5310" lon="8.0620"><ele>753</ele></trkpt>
+      <trkpt lat="46.5315" lon="8.0630"><ele>754</ele></trkpt>
+      <trkpt lat="46.5320" lon="8.0640"><ele>755</ele></trkpt>
+      <trkpt lat="46.5325" lon="8.0650"><ele>754</ele></trkpt>
+      <trkpt lat="46.5330" lon="8.0660"><ele>752</ele></trkpt>
+      <trkpt lat="46.5335" lon="8.0670"><ele>750</ele></trkpt>
+      <trkpt lat="46.5340" lon="8.0680"><ele>748</ele></trkpt>
+      <trkpt lat="46.5345" lon="8.0690"><ele>745</ele></trkpt>
+
+      <!-- Небольшой спуск 745м → 620м (точки 71-85, ~0.7 км) -->
+      <trkpt lat="46.5350" lon="8.0700"><ele>730</ele></trkpt>
+      <trkpt lat="46.5355" lon="8.0710"><ele>715</ele></trkpt>
+      <trkpt lat="46.5360" lon="8.0720"><ele>700</ele></trkpt>
+      <trkpt lat="46.5365" lon="8.0730"><ele>685</ele></trkpt>
+      <trkpt lat="46.5370" lon="8.0740"><ele>672</ele></trkpt>
+      <trkpt lat="46.5375" lon="8.0750"><ele>660</ele></trkpt>
+      <trkpt lat="46.5380" lon="8.0760"><ele>650</ele></trkpt>
+      <trkpt lat="46.5385" lon="8.0770"><ele>642</ele></trkpt>
+      <trkpt lat="46.5390" lon="8.0780"><ele>635</ele></trkpt>
+      <trkpt lat="46.5395" lon="8.0790"><ele>630</ele></trkpt>
+      <trkpt lat="46.5400" lon="8.0800"><ele>625</ele></trkpt>
+      <trkpt lat="46.5405" lon="8.0810"><ele>622</ele></trkpt>
+      <trkpt lat="46.5410" lon="8.0820"><ele>620</ele></trkpt>
+      <trkpt lat="46.5415" lon="8.0830"><ele>620</ele></trkpt>
+      <trkpt lat="46.5420" lon="8.0840"><ele>620</ele></trkpt>
+
+      <!-- Финальный подъём на вершину 620м → 950м (точки 86-115, ~1.5 км) -->
+      <trkpt lat="46.5425" lon="8.0850"><ele>635</ele></trkpt>
+      <trkpt lat="46.5430" lon="8.0860"><ele>652</ele></trkpt>
+      <trkpt lat="46.5435" lon="8.0870"><ele>670</ele></trkpt>
+      <trkpt lat="46.5440" lon="8.0880"><ele>688</ele></trkpt>
+      <trkpt lat="46.5445" lon="8.0890"><ele>705</ele></trkpt>
+      <trkpt lat="46.5450" lon="8.0900"><ele>722</ele></trkpt>
+      <trkpt lat="46.5455" lon="8.0910"><ele>738</ele></trkpt>
+      <trkpt lat="46.5460" lon="8.0920"><ele>755</ele></trkpt>
+      <trkpt lat="46.5465" lon="8.0930"><ele>770</ele></trkpt>
+      <trkpt lat="46.5470" lon="8.0940"><ele>785</ele></trkpt>
+      <trkpt lat="46.5475" lon="8.0950"><ele>800</ele></trkpt>
+      <trkpt lat="46.5480" lon="8.0960"><ele>815</ele></trkpt>
+      <trkpt lat="46.5485" lon="8.0970"><ele>830</ele></trkpt>
+      <trkpt lat="46.5490" lon="8.0980"><ele>845</ele></trkpt>
+      <trkpt lat="46.5495" lon="8.0990"><ele>860</ele></trkpt>
+      <trkpt lat="46.5500" lon="8.1000"><ele>875</ele></trkpt>
+      <trkpt lat="46.5505" lon="8.1010"><ele>888</ele></trkpt>
+      <trkpt lat="46.5510" lon="8.1020"><ele>900</ele></trkpt>
+      <trkpt lat="46.5515" lon="8.1030"><ele>912</ele></trkpt>
+      <trkpt lat="46.5520" lon="8.1040"><ele>922</ele></trkpt>
+      <trkpt lat="46.5525" lon="8.1050"><ele>932</ele></trkpt>
+      <trkpt lat="46.5530" lon="8.1060"><ele>940</ele></trkpt>
+      <trkpt lat="46.5535" lon="8.1070"><ele>946</ele></trkpt>
+      <trkpt lat="46.5540" lon="8.1080"><ele>950</ele></trkpt>
+      <trkpt lat="46.5545" lon="8.1090"><ele>950</ele></trkpt>
+      <trkpt lat="46.5550" lon="8.1100"><ele>949</ele></trkpt>
+      <trkpt lat="46.5555" lon="8.1110"><ele>948</ele></trkpt>
+      <trkpt lat="46.5560" lon="8.1120"><ele>947</ele></trkpt>
+      <trkpt lat="46.5565" lon="8.1130"><ele>946</ele></trkpt>
+      <trkpt lat="46.5570" lon="8.1140"><ele>945</ele></trkpt>
+
+      <!-- Длинный спуск с вершины 945м → 150м (точки 116-160, ~2.2 км) -->
+      <trkpt lat="46.5575" lon="8.1150"><ele>930</ele></trkpt>
+      <trkpt lat="46.5580" lon="8.1160"><ele>910</ele></trkpt>
+      <trkpt lat="46.5585" lon="8.1170"><ele>888</ele></trkpt>
+      <trkpt lat="46.5590" lon="8.1180"><ele>865</ele></trkpt>
+      <trkpt lat="46.5595" lon="8.1190"><ele>842</ele></trkpt>
+      <trkpt lat="46.5600" lon="8.1200"><ele>820</ele></trkpt>
+      <trkpt lat="46.5605" lon="8.1210"><ele>798</ele></trkpt>
+      <trkpt lat="46.5610" lon="8.1220"><ele>775</ele></trkpt>
+      <trkpt lat="46.5615" lon="8.1230"><ele>752</ele></trkpt>
+      <trkpt lat="46.5620" lon="8.1240"><ele>730</ele></trkpt>
+      <trkpt lat="46.5625" lon="8.1250"><ele>708</ele></trkpt>
+      <trkpt lat="46.5630" lon="8.1260"><ele>685</ele></trkpt>
+      <trkpt lat="46.5635" lon="8.1270"><ele>662</ele></trkpt>
+      <trkpt lat="46.5640" lon="8.1280"><ele>640</ele></trkpt>
+      <trkpt lat="46.5645" lon="8.1290"><ele>618</ele></trkpt>
+      <trkpt lat="46.5650" lon="8.1300"><ele>595</ele></trkpt>
+      <trkpt lat="46.5655" lon="8.1310"><ele>572</ele></trkpt>
+      <trkpt lat="46.5660" lon="8.1320"><ele>550</ele></trkpt>
+      <trkpt lat="46.5665" lon="8.1330"><ele>528</ele></trkpt>
+      <trkpt lat="46.5670" lon="8.1340"><ele>505</ele></trkpt>
+      <trkpt lat="46.5675" lon="8.1350"><ele>482</ele></trkpt>
+      <trkpt lat="46.5680" lon="8.1360"><ele>460</ele></trkpt>
+      <trkpt lat="46.5685" lon="8.1370"><ele>438</ele></trkpt>
+      <trkpt lat="46.5690" lon="8.1380"><ele>415</ele></trkpt>
+      <trkpt lat="46.5695" lon="8.1390"><ele>392</ele></trkpt>
+      <trkpt lat="46.5700" lon="8.1400"><ele>370</ele></trkpt>
+      <trkpt lat="46.5705" lon="8.1410"><ele>348</ele></trkpt>
+      <trkpt lat="46.5710" lon="8.1420"><ele>325</ele></trkpt>
+      <trkpt lat="46.5715" lon="8.1430"><ele>302</ele></trkpt>
+      <trkpt lat="46.5720" lon="8.1440"><ele>280</ele></trkpt>
+      <trkpt lat="46.5725" lon="8.1450"><ele>258</ele></trkpt>
+      <trkpt lat="46.5730" lon="8.1460"><ele>235</ele></trkpt>
+      <trkpt lat="46.5735" lon="8.1470"><ele>212</ele></trkpt>
+      <trkpt lat="46.5740" lon="8.1480"><ele>190</ele></trkpt>
+      <trkpt lat="46.5745" lon="8.1490"><ele>175</ele></trkpt>
+      <trkpt lat="46.5750" lon="8.1500"><ele>162</ele></trkpt>
+      <trkpt lat="46.5755" lon="8.1510"><ele>155</ele></trkpt>
+      <trkpt lat="46.5760" lon="8.1520"><ele>150</ele></trkpt>
+      <trkpt lat="46.5765" lon="8.1530"><ele>150</ele></trkpt>
+      <trkpt lat="46.5770" lon="8.1540"><ele>150</ele></trkpt>
+      <trkpt lat="46.5775" lon="8.1550"><ele>150</ele></trkpt>
+      <trkpt lat="46.5780" lon="8.1560"><ele>150</ele></trkpt>
+      <trkpt lat="46.5785" lon="8.1570"><ele>150</ele></trkpt>
+      <trkpt lat="46.5790" lon="8.1580"><ele>150</ele></trkpt>
+      <trkpt lat="46.5795" lon="8.1590"><ele>150</ele></trkpt>
     </trkseg>
   </trk>
 </gpx>

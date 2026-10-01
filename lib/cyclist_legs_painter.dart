@@ -3,60 +3,89 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 class CyclistLegsPainter extends CustomPainter {
-  final double pedalAngle; // Приходит из main.dart
+  final double pedalAngle;
 
   CyclistLegsPainter({required this.pedalAngle});
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Масштабируем под размер виджета (140x168 в main.dart)
-    // Базовые координаты из SVG (100x120) умножаем на 1.4
     final double scale = size.width / 100.0;
 
-    // Точки бедер (под шортами)
-    final Offset hipLeft = Offset(42 * scale, 78 * scale);
-    final Offset hipRight = Offset(58 * scale, 78 * scale);
+    // Точки бёдер (чуть уже для реалистичной стойки)
+    final Offset hipLeft = Offset(44 * scale, 78 * scale);
+    final Offset hipRight = Offset(56 * scale, 78 * scale);
 
-    // Центр каретки (где крутятся педали)
+    // Центр каретки
     final Offset bottomBracket = Offset(50 * scale, 95 * scale);
-    final double crankLength = 14 * scale; // Длина шатуна
+    final double crankLength = 14 * scale;
 
-    // --- ЛЕВАЯ НОГА ---
-    // Стопа описывает круг. sin/cos дают движение по кругу.
-    final double leftFootX =
-        bottomBracket.dx + crankLength * math.sin(pedalAngle);
-    final double leftFootY =
-        bottomBracket.dy - crankLength * math.cos(pedalAngle);
+    // --- СТОПЫ (движутся почти строго вертикально) ---
+    // Минимальное смещение по X (ширина стойки Q-factor)
+    final double leftFootX = bottomBracket.dx - (5 * scale);
+    final double leftFootY = bottomBracket.dy - crankLength * math.cos(pedalAngle);
 
-    // --- ПРАВАЯ НОГА (сдвинута на 180 градусов / PI) ---
-    final double rightFootX =
-        bottomBracket.dx + crankLength * math.sin(pedalAngle + math.pi);
-    final double rightFootY =
-        bottomBracket.dy - crankLength * math.cos(pedalAngle + math.pi);
+    final double rightFootX = bottomBracket.dx + (5 * scale);
+    final double rightFootY = bottomBracket.dy - crankLength * math.cos(pedalAngle + math.pi);
 
+    // Определяем, какая нога сзади (дальше от зрителя), чтобы нарисовать её первой и тоньше
+    final bool leftLegBehind = math.cos(pedalAngle) < 0;
+
+    if (leftLegBehind) {
+      _drawLeg(canvas, hipLeft, leftFootX, leftFootY, scale, isBehind: true);
+      _drawLeg(canvas, hipRight, rightFootX, rightFootY, scale, isBehind: false);
+    } else {
+      _drawLeg(canvas, hipRight, rightFootX, rightFootY, scale, isBehind: true);
+      _drawLeg(canvas, hipLeft, leftFootX, leftFootY, scale, isBehind: false);
+    }
+  }
+
+  void _drawLeg(Canvas canvas, Offset hip, double footX, double footY, 
+      double scale, {required bool isBehind}) {
+    
+    // Задняя нога чуть тоньше для эффекта перспективы
+    final double strokeWidth = isBehind ? 4.5 * scale : 6.0 * scale;
+    
     final legPaint = Paint()
       ..color = const Color(0xFFd4a574) // Цвет кожи
-      ..strokeWidth = 6 * scale // Толщина ноги
-      ..strokeCap = StrokeCap.round // Закругленные края (колени и стопы)
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    // Рисуем левую ногу с легким изгибом в колене (квадратичная кривая)
-    final leftLegPath = Path();
-    leftLegPath.moveTo(hipLeft.dx, hipLeft.dy);
-    // Контрольная точка слегка смещена наружу, имитируя изгиб колена
-    final leftKneeX = (hipLeft.dx + leftFootX) / 2 - (3 * scale);
-    final leftKneeY = (hipLeft.dy + leftFootY) / 2;
-    leftLegPath.quadraticBezierTo(leftKneeX, leftKneeY, leftFootX, leftFootY);
-    canvas.drawPath(leftLegPath, legPaint);
+    // Вычисляем текущее расстояние от бедра до стопы
+    final double currentDist = math.sqrt(
+      math.pow(footX - hip.dx, 2) + math.pow(footY - hip.dy, 2)
+    );
 
-    // Рисуем правую ногу
-    final rightLegPath = Path();
-    rightLegPath.moveTo(hipRight.dx, hipRight.dy);
-    final rightKneeX = (hipRight.dx + rightFootX) / 2 + (3 * scale);
-    final rightKneeY = (hipRight.dy + rightFootY) / 2;
-    rightLegPath.quadraticBezierTo(
-        rightKneeX, rightKneeY, rightFootX, rightFootY);
-    canvas.drawPath(rightLegPath, legPaint);
+    // Максимальная длина выпрямленной ноги (бедро до нижней точки педали)
+    // 78 (бедро) до 95+14 (низ педали) = 31 * scale
+    final double maxStraightDist = 31.0 * scale;
+    
+    // Насколько нога согнута: чем меньше расстояние, тем сильнее сгиб
+    final double bendAmount = (maxStraightDist - currentDist).clamp(0.0, 12.0 * scale);
+
+    // Колено по горизонтали всегда строго между бедром и стопой (никаких взмахов в сторону!)
+    // Добавляем крошечный сдвиг (1 * scale) наружу для естественности стойки
+    final double direction = hip.dx < 50 * scale ? -1.0 : 1.0;
+    final double kneeX = (hip.dx + footX) / 2 + (1.0 * scale * direction);
+    
+    // По вертикали колено "поднимается" вверх, когда нога сгибается (имитация сгиба вперёд)
+    final double kneeY = (hip.dy + footY) / 2 - (bendAmount * 0.6);
+
+    // Рисуем ногу
+    final legPath = Path();
+    legPath.moveTo(hip.dx, hip.dy);
+    legPath.quadraticBezierTo(kneeX, kneeY, footX, footY);
+    canvas.drawPath(legPath, legPaint);
+    
+    // Аккуратный акцент на колене (только когда нога заметно согнута)
+    if (bendAmount > 4.0 * scale) {
+      final kneePaint = Paint()
+        ..color = const Color(0xFFc99564) // Чуть темнее
+        ..strokeWidth = strokeWidth * 0.8
+        ..style = PaintingStyle.fill;
+      
+      canvas.drawCircle(Offset(kneeX, kneeY), strokeWidth * 0.5, kneePaint);
+    }
   }
 
   @override

@@ -9,11 +9,10 @@ class PerspectiveRoadPainter extends CustomPainter {
   final double currentGradient;
   final double currentSpeed;
   final double cadence;
-  final double pedalAngle;
   final double roadAnimationPhase;
 
-  final int segments = 30;
-  final double visualElevationScale = 2.0;
+  final int segments = 60; // Увеличили количество сегментов для плавности
+  final double visualElevationScale = 5.0; // Усилили эффект рельефа
 
   PerspectiveRoadPainter({
     required this.elevationData,
@@ -22,7 +21,6 @@ class PerspectiveRoadPainter extends CustomPainter {
     required this.currentGradient,
     required this.currentSpeed,
     required this.cadence,
-    required this.pedalAngle,
     required this.roadAnimationPhase,
   });
 
@@ -45,11 +43,13 @@ class PerspectiveRoadPainter extends CustomPainter {
     _drawSky(canvas, size);
     _drawMountains(canvas, size);
     _drawRoad(canvas, size);
-    _drawCyclist(canvas, size); // 🚀 Рисуем велосипедиста
   }
 
   void _drawSky(Canvas canvas, Size size) {
-    final skyRect = Rect.fromLTWH(0, 0, size.width, size.height * 0.6);
+    // 🚀 Точка схода сильно поднята (камера смотрит вниз)
+    final vanishingPointY = size.height * 0.4; // Было 0.4, стало 0.22
+    final skyRect = Rect.fromLTWH(0, 0, size.width, vanishingPointY);
+    
     final gradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
@@ -71,8 +71,8 @@ class PerspectiveRoadPainter extends CustomPainter {
 
   void _drawCelestialBody(Canvas canvas, Size size) {
     final sunX = size.width * 0.8;
-    final sunY = size.height * 0.15;
-    final sunRadius = size.width * 0.04;
+    final sunY = size.height * 0.1;
+    final sunRadius = size.width * 0.035;
 
     final sunPaint = Paint()
       ..color = const Color(0xFFFFD700).withOpacity(0.9)
@@ -88,12 +88,12 @@ class PerspectiveRoadPainter extends CustomPainter {
   }
 
   void _drawMountains(Canvas canvas, Size size) {
-    final vanishingPointY = size.height * 0.4;
+    final vanishingPointY = size.height * 0.22;
     final baseElevation = _getElevationAt(currentDistance);
 
     for (int layer = 0; layer < 3; layer++) {
       final path = Path();
-      final layerOffset = layer * 40.0;
+      final layerOffset = layer * 30.0;
       final mountainColor = [
         const Color(0xFF1a1a2e),
         const Color(0xFF16213e),
@@ -108,13 +108,13 @@ class PerspectiveRoadPainter extends CustomPainter {
         final normalizedX = x / size.width;
 
         double height = 0;
-        height += math.sin((normalizedX * 8) + (distanceOffset * 0.001)) * 25;
-        height += math.sin((normalizedX * 4) + (distanceOffset * 0.002)) * 45;
-        height += math.sin((normalizedX * 2) + (distanceOffset * 0.0005)) * 70;
+        height += math.sin((normalizedX * 8) + (distanceOffset * 0.001)) * 20;
+        height += math.sin((normalizedX * 4) + (distanceOffset * 0.002)) * 35;
+        height += math.sin((normalizedX * 2) + (distanceOffset * 0.0005)) * 50;
 
         final elevIndex = ((normalizedX * 200) % elevationData.length).floor();
         if (elevationData.isNotEmpty) {
-          height += (elevationData[elevIndex] - baseElevation) * 0.15;
+          height += (elevationData[elevIndex] - baseElevation) * 0.1;
         }
 
         final y = vanishingPointY - height - layerOffset;
@@ -135,7 +135,7 @@ class PerspectiveRoadPainter extends CustomPainter {
 
   void _drawRoad(Canvas canvas, Size size) {
     final vanishingPointX = size.width / 2;
-    final vanishingPointY = size.height * 0.4;
+    final vanishingPointY = size.height * 0.22; // 🚀 Точка схода поднята
     final baseElevation = _getElevationAt(currentDistance);
 
     final groundPaint = Paint()
@@ -143,16 +143,20 @@ class PerspectiveRoadPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     canvas.drawRect(
-      Rect.fromLTWH(0, vanishingPointY, size.width, size.height * 0.6),
+      Rect.fromLTWH(0, vanishingPointY, size.width, size.height - vanishingPointY),
       groundPaint,
     );
+
+    // 🚀 РЕЗКО УСИЛЕННАЯ ПЕРСПЕКТИВА для вида сверху
+    // Было 2.5, стало 4.0 — ближние сегменты огромные, дальние крошечные
+    const double perspectivePower = 4.0;
 
     for (int i = 0; i < segments; i++) {
       double t1 = i / segments;
       double t2 = (i + 1) / segments;
 
-      double p1 = math.pow(t1, 2.5).toDouble();
-      double p2 = math.pow(t2, 2.5).toDouble();
+      double p1 = math.pow(t1, perspectivePower).toDouble();
+      double p2 = math.pow(t2, perspectivePower).toDouble();
 
       double y1Base = vanishingPointY + (size.height - vanishingPointY) * p1;
       double y2Base = vanishingPointY + (size.height - vanishingPointY) * p2;
@@ -170,8 +174,13 @@ class PerspectiveRoadPainter extends CustomPainter {
       double y1 = y1Base + yShift1;
       double y2 = y2Base + yShift2;
 
-      double width1 = 5.0 + (size.width * 0.5) * p1;
-      double width2 = 5.0 + (size.width * 0.5) * p2;
+      //  ДОРОГА ОЧЕНЬ ШИРОКАЯ ВНИЗУ (эффект взгляда сверху)
+      // Начальная ширина 20 (было 5), коэффициент 0.6 (было 0.5)
+      const double roadStartWidth = 20.0;
+      const double roadWidthFactor = 0.6;
+      
+      double width1 = roadStartWidth + (size.width * roadWidthFactor) * p1;
+      double width2 = roadStartWidth + (size.width * roadWidthFactor) * p2;
 
       final path = Path();
       path.moveTo(vanishingPointX - width1, y1);
@@ -192,11 +201,11 @@ class PerspectiveRoadPainter extends CustomPainter {
       if (isDark) {
         final linePaint = Paint()
           ..color = Colors.yellow.withOpacity(0.9)
-          ..strokeWidth = 2.5
+          ..strokeWidth = 3.0
           ..style = PaintingStyle.stroke;
 
-        final lineWidth1 = width1 * 0.05;
-        final lineWidth2 = width2 * 0.05;
+        final lineWidth1 = width1 * 0.04;
+        final lineWidth2 = width2 * 0.04;
 
         canvas.drawLine(Offset(vanishingPointX - lineWidth1, y1),
             Offset(vanishingPointX - lineWidth2, y2), linePaint);
@@ -206,7 +215,7 @@ class PerspectiveRoadPainter extends CustomPainter {
 
       final edgePaint = Paint()
         ..color = Colors.white.withOpacity(0.7)
-        ..strokeWidth = 2.0
+        ..strokeWidth = 2.5
         ..style = PaintingStyle.stroke;
 
       canvas.drawLine(Offset(vanishingPointX - width1, y1),
@@ -216,84 +225,10 @@ class PerspectiveRoadPainter extends CustomPainter {
     }
   }
 
-  // 🚀 НОВЫЙ МЕТОД: Рисуем силуэт велосипедиста
-  void _drawCyclist(Canvas canvas, Size size) {
-    // Масштабируем размер велосипедиста относительно высоты экрана
-    final double scale = size.height / 500.0;
-
-    // 🚀 МАГИЯ: Покачивание в такт педалированию.
-    // sin(pedalAngle) плавно меняется от -1 до 1 при каждом обороте педалей.
-    final double bounce = math.sin(pedalAngle) * 4.0 * scale;
-
-    final centerX = size.width / 2;
-    final baseY = size.height - (30 * scale); // Базовая позиция снизу
-
-    final paint = Paint()
-      ..color = Colors.black.withOpacity(0.85)
-      ..style = PaintingStyle.fill;
-
-    // Рисуем с небольшим смещением bounce по оси Y
-    canvas.save();
-    canvas.translate(0, bounce);
-
-    // 1. Колёса
-    final wheelRadius = 18.0 * scale;
-    final rearWheel = Offset(centerX - 35 * scale, baseY);
-    final frontWheel = Offset(centerX + 35 * scale, baseY);
-
-    canvas.drawCircle(rearWheel, wheelRadius, paint);
-    canvas.drawCircle(frontWheel, wheelRadius, paint);
-
-    // 2. Рама и руль (упрощённый силуэт)
-    final framePath = Path();
-    framePath.moveTo(centerX - 35 * scale, baseY); // Задняя ось
-    framePath.lineTo(
-        centerX - 10 * scale, baseY - 35 * scale); // Подседельный штырь
-    framePath.lineTo(centerX + 15 * scale, baseY - 35 * scale); // Верхняя труба
-    framePath.lineTo(centerX + 35 * scale, baseY); // Передняя вилка
-    framePath.lineTo(centerX + 5 * scale, baseY - 10 * scale); // Каретка
-    framePath.close();
-    canvas.drawPath(framePath, paint);
-
-    // 3. Седло и руль
-    final seatPath = Path();
-    seatPath.moveTo(centerX - 15 * scale, baseY - 38 * scale);
-    seatPath.lineTo(centerX - 5 * scale, baseY - 38 * scale);
-    seatPath.lineTo(centerX - 5 * scale, baseY - 35 * scale);
-    seatPath.close();
-    canvas.drawPath(seatPath, paint);
-
-    final handlebarPath = Path();
-    handlebarPath.moveTo(centerX + 15 * scale, baseY - 35 * scale);
-    handlebarPath.lineTo(centerX + 25 * scale, baseY - 40 * scale);
-    handlebarPath.lineTo(centerX + 28 * scale, baseY - 38 * scale);
-    handlebarPath.close();
-    canvas.drawPath(handlebarPath, paint);
-
-    // 4. Силуэт гонщика (голова и торс)
-    final riderPath = Path();
-    // Голова
-    riderPath.addOval(Rect.fromCircle(
-        center: Offset(centerX + 5 * scale, baseY - 55 * scale),
-        radius: 7 * scale));
-    // Торс и руки (аэропосадка)
-    riderPath.moveTo(centerX + 5 * scale, baseY - 48 * scale);
-    riderPath.lineTo(centerX - 5 * scale, baseY - 38 * scale); // Спина к седлу
-    riderPath.lineTo(centerX + 25 * scale, baseY - 40 * scale); // Руки к рулю
-    riderPath.lineTo(
-        centerX + 15 * scale, baseY - 35 * scale); // Возврат к раме
-    riderPath.close();
-    canvas.drawPath(riderPath, paint);
-
-    canvas.restore();
-  }
-
   @override
   bool shouldRepaint(covariant PerspectiveRoadPainter oldDelegate) {
     return oldDelegate.currentDistance != currentDistance ||
         oldDelegate.currentGradient != currentGradient ||
-        oldDelegate.pedalAngle !=
-            pedalAngle || // Важно для анимации велосипедиста!
         oldDelegate.roadAnimationPhase != roadAnimationPhase;
   }
 }

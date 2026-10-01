@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../bluetooth_manager.dart';
 import '../perspective_road.dart';
 import '../cyclist_legs_painter.dart';
-import 'metric_cards.dart'; // 🚀 ИСПРАВЛЕНО: убран лишний префикс 'widgets/'
+import 'metric_cards.dart';
 
 class ActiveRideView extends StatelessWidget {
   final BluetoothManager btManager;
@@ -21,7 +21,6 @@ class ActiveRideView extends StatelessWidget {
   final double cyclistBounce;
   final List<double> elevationProfile;
   final double totalRouteDistance;
-  final List<double> curveData;
   final bool isSimulating;
   final VoidCallback onStopRide;
   final VoidCallback onToggleSimulation;
@@ -43,7 +42,6 @@ class ActiveRideView extends StatelessWidget {
     required this.cyclistBounce,
     required this.elevationProfile,
     required this.totalRouteDistance,
-    required this.curveData,
     required this.isSimulating,
     required this.onStopRide,
     required this.onToggleSimulation,
@@ -53,6 +51,7 @@ class ActiveRideView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // 🚀 ДОРОГА НА ВЕСЬ ЭКРАН (теперь занимает весь Stack)
         ValueListenableBuilder<double>(
           valueListenable: roadPhaseNotifier,
           builder: (context, phase, child) {
@@ -65,119 +64,242 @@ class ActiveRideView extends StatelessWidget {
                 currentGradient: currentGrad,
                 currentSpeed: displaySpeed,
                 cadence: displayCadence.toDouble(),
+                // pedalAngle: pedalAngle,
                 roadAnimationPhase: phase,
-                curveData: curveData,
               ),
             );
           },
         ),
-        Positioned(
-          top: 0, left: 0, right: 0,
-          child: SafeArea(
-            bottom: false,
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: isPhone ? 8 : 16, vertical: isPhone ? 8 : 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade800.withOpacity(0.95),
-                border: Border(bottom: BorderSide(color: Colors.grey.shade700, width: 1)),
-              ),
-              child: isPhone
-                  ? Row(
-                      children: [
-                        CompactMetric(value: displaySpeed.toStringAsFixed(1), unit: 'км/ч', color: Colors.blue, valueSize: 22),
-                        CompactMetric(value: displayPower.toString(), unit: 'Вт', color: Colors.orange, valueSize: 22),
-                        CompactMetric(value: displayHeartRate.toString(), unit: 'уд/мин', color: Colors.red, valueSize: 22),
-                        CompactMetric(value: displayCadence.toString(), unit: 'об/мин', color: Colors.purple, valueSize: 22),
-                        CompactMetric(
-                          value: (currentGrad >= 0 ? '+' : '') + currentGrad.toStringAsFixed(1) + '%',
-                          unit: currentGrad > 2 ? 'подъем' : (currentGrad < -2 ? 'спуск' : 'ровно'),
-                          color: currentGrad > 5 ? Colors.red : (currentGrad < -5 ? Colors.blue : Colors.orange),
-                          valueSize: 22,
-                        ),
-                        CompactMetric(value: _formatDuration(rideDuration), unit: 'время', color: Colors.white, valueSize: 19),
-                        CompactMetric(value: _formatDistance(distance), unit: 'дистанция', color: Colors.cyan, valueSize: 19),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Row(
-                          children: [
-                            CompactMetric(value: displaySpeed.toStringAsFixed(1), unit: 'км/ч', color: Colors.blue),
-                            CompactMetric(value: displayPower.toString(), unit: 'Вт', color: Colors.orange),
-                            CompactMetric(value: displayHeartRate.toString(), unit: 'уд/м', color: Colors.red),
-                            CompactMetric(value: displayCadence.toString(), unit: 'об/м', color: Colors.purple),
-                            CompactMetric(
-                              value: (currentGrad >= 0 ? '+' : '') + currentGrad.toStringAsFixed(1) + '%',
-                              unit: currentGrad > 2 ? 'подъем' : (currentGrad < -2 ? 'спуск' : 'ровно'),
-                              color: currentGrad > 5 ? Colors.red : (currentGrad < -5 ? Colors.blue : Colors.orange),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            CompactMetric(value: _formatDuration(rideDuration), unit: 'время', color: Colors.white),
-                            CompactMetric(value: _formatDistance(distance), unit: 'дистанция', color: Colors.cyan),
-                            CompactMetric(value: _formatDuration(movingDuration), unit: 'движение', color: Colors.greenAccent),
-                          ],
-                        ),
-                      ],
-                    ),
-            ),
-          ),
+
+        // 🚀 ПАНЕЛЬ МЕТРИК ПОВЕРХ ДОРОГИ
+        // В ActiveRideView заменяем блок с градиентом и панелью метрик на:
+
+//  ПАНЕЛЬ МЕТРИК С СВЕТЛЫМ ФОНОМ
+Positioned(
+  top: 0,
+  left: 0,
+  right: 0,
+  child: SafeArea(
+    bottom: false,
+    child: Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+          horizontal: isPhone ? 8 : 16, vertical: isPhone ? 8 : 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade800.withOpacity(0.95), // Светлый фон
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade700, width: 1)
         ),
+      ),
+      child: isPhone
+          ? Row(
+              children: [
+                CompactMetric(
+                  value: displaySpeed.toStringAsFixed(1),
+                  unit: 'км/ч',
+                  color: Colors.blue,
+                  valueSize: 22,
+                ),
+                CompactMetric(
+                  value: displayPower.toString(),
+                  unit: 'Вт',
+                  color: Colors.orange,
+                  valueSize: 22,
+                ),
+                CompactMetric(
+                  value: displayHeartRate.toString(),
+                  unit: 'уд/мин',
+                  color: Colors.red,
+                  valueSize: 22,
+                ),
+                CompactMetric(
+                  value: displayCadence.toString(),
+                  unit: 'об/мин',
+                  color: Colors.purple,
+                  valueSize: 22,
+                ),
+                CompactMetric(
+                  value: (currentGrad >= 0 ? '+' : '') +
+                      currentGrad.toStringAsFixed(1) +
+                      '%',
+                  unit: currentGrad > 2
+                      ? 'подъем'
+                      : (currentGrad < -2 ? 'спуск' : 'ровно'),
+                  color: currentGrad > 5
+                      ? Colors.red
+                      : (currentGrad < -5
+                          ? Colors.blue
+                          : Colors.orange),
+                  valueSize: 22,
+                ),
+                CompactMetric(
+                  value: _formatDuration(rideDuration),
+                  unit: 'время',
+                  color: Colors.white,
+                  valueSize: 19,
+                ),
+                CompactMetric(
+                  value: _formatDistance(distance),
+                  unit: 'дистанция',
+                  color: Colors.cyan,
+                  valueSize: 19,
+                ),
+              ],
+            )
+          : Column(
+              children: [
+                Row(
+                  children: [
+                    CompactMetric(
+                      value: displaySpeed.toStringAsFixed(1),
+                      unit: 'км/ч',
+                      color: Colors.blue,
+                    ),
+                    CompactMetric(
+                      value: displayPower.toString(),
+                      unit: 'Вт',
+                      color: Colors.orange,
+                    ),
+                    CompactMetric(
+                      value: displayHeartRate.toString(),
+                      unit: 'уд/м',
+                      color: Colors.red,
+                    ),
+                    CompactMetric(
+                      value: displayCadence.toString(),
+                      unit: 'об/м',
+                      color: Colors.purple,
+                    ),
+                    CompactMetric(
+                      value: (currentGrad >= 0 ? '+' : '') +
+                          currentGrad.toStringAsFixed(1) +
+                          '%',
+                      unit: currentGrad > 2
+                          ? 'подъем'
+                          : (currentGrad < -2 ? 'спуск' : 'ровно'),
+                      color: currentGrad > 5
+                          ? Colors.red
+                          : (currentGrad < -5
+                              ? Colors.blue
+                              : Colors.orange),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    CompactMetric(
+                      value: _formatDuration(rideDuration),
+                      unit: 'время',
+                      color: Colors.white,
+                    ),
+                    CompactMetric(
+                      value: _formatDistance(distance),
+                      unit: 'дистанция',
+                      color: Colors.cyan,
+                    ),
+                    CompactMetric(
+                      value: _formatDuration(movingDuration),
+                      unit: 'движение',
+                      color: Colors.greenAccent,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+    ),
+  ),
+),
+
+        // 🚀 ВЕЛОСИПЕДИСТ
         Positioned(
-          left: 0, right: 0, bottom: 25,
+          left: 0,
+          right: 0,
+          bottom: 25,
           child: Center(
             child: Transform.translate(
               offset: Offset(0, cyclistBounce),
               child: SizedBox(
-                width: 140, height: 168,
+                width: 140,
+                height: 168,
                 child: Stack(
                   children: [
-                    Positioned.fill(child: SvgPicture.asset('assets/images/cyclist.svg', fit: BoxFit.fill)),
-                    Positioned.fill(child: CustomPaint(painter: CyclistLegsPainter(pedalAngle: pedalAngle))),
+                    Positioned.fill(
+                      child: SvgPicture.asset(
+                        'assets/images/cyclist.svg',
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: CyclistLegsPainter(pedalAngle: pedalAngle),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
         ),
+
+        // Кнопка СТОП
         Positioned(
-          left: isPhone ? 16 : 16, bottom: isPhone ? 16 : 16,
+          left: isPhone ? 16 : 16,
+          bottom: isPhone ? 16 : 16,
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: onStopRide,
               borderRadius: BorderRadius.circular(32),
               child: Container(
-                width: isPhone ? 64 : 56, height: isPhone ? 64 : 56,
+                width: isPhone ? 64 : 56,
+                height: isPhone ? 64 : 56,
                 decoration: BoxDecoration(
                   color: Colors.redAccent.withOpacity(0.9),
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 3))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3))
+                  ],
                 ),
-                child: Icon(Icons.stop_rounded, color: Colors.white, size: isPhone ? 32 : 28),
+                child: Icon(Icons.stop_rounded,
+                    color: Colors.white, size: isPhone ? 32 : 28),
               ),
             ),
           ),
         ),
+
+        // Кнопка Play/Pause (Dev Mode)
         Positioned(
-          right: 16, bottom: 16,
+          right: 16,
+          bottom: 16,
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: onToggleSimulation,
               borderRadius: BorderRadius.circular(32),
               child: Container(
-                width: 56, height: 56,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: isSimulating ? Colors.greenAccent : Colors.grey.shade800,
+                  color:
+                      isSimulating ? Colors.greenAccent : Colors.grey.shade800,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 3))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    )
+                  ],
                 ),
-                child: Icon(isSimulating ? Icons.pause : Icons.play_arrow, color: isSimulating ? Colors.black : Colors.white, size: 28),
+                child: Icon(
+                  isSimulating ? Icons.pause : Icons.play_arrow,
+                  color: isSimulating ? Colors.black : Colors.white,
+                  size: 28,
+                ),
               ),
             ),
           ),
@@ -188,9 +310,13 @@ class ActiveRideView extends StatelessWidget {
 
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String m = twoDigits(duration.inMinutes.remainder(60));
-    String s = twoDigits(duration.inSeconds.remainder(60));
-    return duration.inHours > 0 ? "${twoDigits(duration.inHours)}:$m:$s" : "$m:$s";
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    if (duration.inHours > 0) {
+      return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
+    } else {
+      return "$twoDigitMinutes:$twoDigitSeconds";
+    }
   }
 
   String _formatDistance(double meters) {

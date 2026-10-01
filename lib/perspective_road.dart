@@ -10,7 +10,6 @@ class PerspectiveRoadPainter extends CustomPainter {
   final double currentSpeed;
   final double cadence;
   final double roadAnimationPhase;
-  final List<double> curveData;
 
   final int segments = 60; // Увеличили количество сегментов для плавности
   final double visualElevationScale = 5.0; // Усилили эффект рельефа
@@ -23,7 +22,6 @@ class PerspectiveRoadPainter extends CustomPainter {
     required this.currentSpeed,
     required this.cadence,
     required this.roadAnimationPhase,
-    required this.curveData,
   });
 
   double _getElevationAt(double distance) {
@@ -39,18 +37,6 @@ class PerspectiveRoadPainter extends CustomPainter {
     return elevationData[index1] +
         (elevationData[index2] - elevationData[index1]) * fraction;
   }
-
-  double _getCurveAt(double distance) {
-  if (curveData.isEmpty) return 0.0;
-  double normalizedIndex = (distance / totalDistance) * (curveData.length - 1);
-  normalizedIndex = normalizedIndex.clamp(0.0, curveData.length - 1.0);
-
-  int index1 = normalizedIndex.floor();
-  int index2 = (index1 + 1).clamp(0, curveData.length - 1);
-  double fraction = normalizedIndex - index1;
-
-  return curveData[index1] + (curveData[index2] - curveData[index1]) * fraction;
-}
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -188,17 +174,10 @@ class PerspectiveRoadPainter extends CustomPainter {
       double y1 = y1Base + yShift1;
       double y2 = y2Base + yShift2;
 
-      double curve1 = _getCurveAt(dist1);
-      double curve2 = _getCurveAt(dist2);
-      double maxShift = size.width * 0.35;
-
       //  ДОРОГА ОЧЕНЬ ШИРОКАЯ ВНИЗУ (эффект взгляда сверху)
       // Начальная ширина 20 (было 5), коэффициент 0.6 (было 0.5)
       const double roadStartWidth = 20.0;
       const double roadWidthFactor = 0.6;
-
-      double centerX1 = vanishingPointX + curve1 * maxShift;
-      double centerX2 = vanishingPointX + curve2 * maxShift;
       
       double width1 = roadStartWidth + (size.width * roadWidthFactor) * p1;
       double width2 = roadStartWidth + (size.width * roadWidthFactor) * p2;
@@ -222,27 +201,27 @@ class PerspectiveRoadPainter extends CustomPainter {
       if (isDark) {
         final linePaint = Paint()
           ..color = Colors.yellow.withOpacity(0.9)
-          ..strokeWidth = 2.5
+          ..strokeWidth = 3.0
           ..style = PaintingStyle.stroke;
 
-        final lineWidth1 = width1 * 0.05;
-        final lineWidth2 = width2 * 0.05;
+        final lineWidth1 = width1 * 0.04;
+        final lineWidth2 = width2 * 0.04;
 
-        canvas.drawLine(Offset(centerX1 - lineWidth1, y1),
-            Offset(centerX2 - lineWidth2, y2), linePaint);
-        canvas.drawLine(Offset(centerX1 + lineWidth1, y1),
-            Offset(centerX2 + lineWidth2, y2), linePaint);
+        canvas.drawLine(Offset(vanishingPointX - lineWidth1, y1),
+            Offset(vanishingPointX - lineWidth2, y2), linePaint);
+        canvas.drawLine(Offset(vanishingPointX + lineWidth1, y1),
+            Offset(vanishingPointX + lineWidth2, y2), linePaint);
       }
 
       final edgePaint = Paint()
         ..color = Colors.white.withOpacity(0.7)
-        ..strokeWidth = 2.0
+        ..strokeWidth = 2.5
         ..style = PaintingStyle.stroke;
 
-      canvas.drawLine(Offset(centerX1 - width1, y1),
-          Offset(centerX2 - width2, y2), edgePaint);
-      canvas.drawLine(Offset(centerX1 + width1, y1),
-          Offset(centerX2 + width2, y2), edgePaint);
+      canvas.drawLine(Offset(vanishingPointX - width1, y1),
+          Offset(vanishingPointX - width2, y2), edgePaint);
+      canvas.drawLine(Offset(vanishingPointX + width1, y1),
+          Offset(vanishingPointX + width2, y2), edgePaint);
     }
   }
 

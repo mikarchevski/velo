@@ -59,7 +59,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   bool isShowingConnectionScreen = false;
   bool isRiding = false;
   Timer? _rideTimer;
-  RouteData? _currentRoute;
 
   Duration rideDuration = Duration.zero;
   Duration movingDuration = Duration.zero;
@@ -182,7 +181,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       cyclistBounce: _cyclistBounce,
       elevationProfile: elevationProfile,
       totalRouteDistance: totalRouteDistance,
-      curveData: _currentRoute?.curves ?? [],
       isSimulating: _isSimulating,
       onStopRide: _showStopRideDialog,
       onToggleSimulation: _toggleSimulation,
@@ -191,14 +189,12 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
 
   Future<void> _loadRoute() async {
     final route = await GpxLoader.fromAsset('assets/tracks/test_climb.gpx');
-    _currentRoute = route;
     if (route.isEmpty) {
       print("⚠️ Не удалось загрузить маршрут, используем фоллбэк");
       _generateFallbackRoute();
       return;
     }
     setState(() {
-      _currentRoute = route; 
       elevationProfile = route.elevations;
       totalRouteDistance = route.totalDistance;
       _elevationCalculator = ElevationCalculator(elevationData: elevationProfile, totalDistance: totalRouteDistance);
